@@ -1,0 +1,134 @@
+// AI Engineering Room - Prisma Schema
+// Event-sourced, multi-agent engineering collaboration platform
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+// --- Session ---
+// A complete design discussion from initial prompt through final consensus
+model Session {
+  id                 String    @id @default(cuid())
+  title              String?
+  problemDescription String
+  status             String    @default("active") // active | paused | completed
+  currentRound       Int       @default(0)
+  currentStage       String?   // proposal | critique | revision | consensus | awaiting-intervention
+  tokenBudget        Int?      // configurable token limit for the session
+  lockedBy           String?   // lock ID for preventing concurrent round starts
+  lockedAt           DateTime? // timestamp when lock was acquired (stale after 5 min)
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+
+  events      Event[]
+  artifacts   Artifact[]
+  tokenUsages TokenUsage[]
+  snapshots   SessionSnapshot[]
+}
+
+// --- Event ---
+// Immutable record of an interaction in the event log
+// Event types (13 total):
+//   session-created    - Session was initialized
+//   round-started      - A new round began
+//   round-completed    - A round finished (consensus reached)
+//   proposal           - Agent submitted a proposal
+//   critique           - Agent submitted a critique of another agent's proposal
+//   revision           - Agent revised their position after critiques
+//   user-intervention  - User injected a constraint between rounds
+//   consensus-update   - Consensus synthesis was produced
+//   clarification-request - Agent(s) requested clarification from user
+//   artifact-created   - A new artifact was created in the workspace
+//   artifact-updated   - An existing artifact was modified
+//   artifact-status-changed - An artifact's status was changed (draft/accepted/rejected)
+//   stage-progress     - Individual agent completed their work in current stage (for real-time progress tracking)
+model Event {
+  id        String   @id @default(cuid())
+  sessionId String
+  session   Session  @relation(fields: [sessionId], references: [id])
+  type      String   // One of the 13 event types above
+  agentId   String?  // Which agent produced this event (null for system/user events)
+  round     Int      // Round number (0 for session-level events)
+  stage     String?  // Which stage this event belongs to
+  content   String   // JSON-serialized payload
+  timestamp DateTime @default(now())
+
+  @@index([sessionId, timestamp])
+  @@index([sessionId, round, stage])
+}
+
+// --- Artifact ---
+// A mutable working document produced collaboratively by agents
+// Types: decision, risk, assumption, tradeoff, open-question, recommendation
+// Statuses: draft, accepted, rejected
+model Artifact {
+  id               String            @id @default(cuid())
+  sessionId        String
+  session          Session           @relation(fields: [sessionId], references: [id])
+  type             String            // decision | risk | assumption | tradeoff | open-question | recommendation
+  title            String
+  content          String
+  status           String            @default("draft") // draft | accepted | rejected
+  createdByAgentId String?           // Which agent initially created this artifact
+  version          Int               @default(1)
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+  versions         ArtifactVersion[]
+
+  @@unique([sessionId, type, title])
+  @@index([sessionId, type])
+  @@index([sessionId, status])
+}
+
+// --- ArtifactVersion ---
+// Version history for artifacts with full provenance
+model ArtifactVersion {
+  id            String   @id @default(cuid())
+  artifactId    String
+  artifact      Artifact @relation(fields: [artifactId], references: [id])
+  version       Int
+  content       String
+  agentId       String?  // Which agent made this change
+  reasoning     String?  // Why the change was made
+  sourceEventId String   // Links to the Event that triggered this version change
+  timestamp     DateTime @default(now())
+
+  @@index([artifactId, version])
+}
+
+// --- TokenUsage ---
+// Tracks token consumption per LLM call for cost management
+model TokenUsage {
+  id           String   @id @default(cuid())
+  sessionId    String
+  session      Session  @relation(fields: [sessionId], references: [id])
+  agentId      String?  // Which agent consumed these tokens (null for consensus/summary)
+  round        Int
+  stage        String?  // Which stage the call was for
+  inputTokens  Int
+  outputTokens Int
+  model        String   // Which model was used
+  timestamp    DateTime @default(now())
+
+  @@index([sessionId])
+  @@index([sessionId, round])
+}
+
+// --- SessionSnapshot ---
+// Persisted projected state after each completed round for O(1) state reconstruction
+model SessionSnapshot {
+  id        String   @id @default(cuid())
+  sessionId String
+  session   Session  @relation(fields: [sessionId], references: [id])
+  round     Int      // The round number this snapshot was taken after
+  state     String   // JSON-serialized SessionState at this point in time
+  createdAt DateTime @default(now())
+
+  @@unique([sessionId, round])
+  @@index([sessionId])
+}

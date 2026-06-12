@@ -1,0 +1,595 @@
+{
+  "pbtResults": {},
+  "executionHistory": {
+    "1.1 Initialize Next.js project with TypeScript, Tailwind CSS, and Prisma": [
+      {
+        "executionId": "43490eec-fcb7-4b59-8625-910cc202d066",
+        "chatSessionId": "ab281ff3-4dc0-4415-a050-cef8e5c8fa39",
+        "timestamp": 1781169632207
+      },
+      {
+        "executionId": "43490eec-fcb7-4b59-8625-910cc202d066",
+        "chatSessionId": "ab281ff3-4dc0-4415-a050-cef8e5c8fa39",
+        "timestamp": 1781169637732
+      }
+    ],
+    "2.1 Define complete Prisma schema": [
+      {
+        "executionId": "43490eec-fcb7-4b59-8625-910cc202d066",
+        "chatSessionId": "ab281ff3-4dc0-4415-a050-cef8e5c8fa39",
+        "timestamp": 1781169632212
+      },
+      {
+        "executionId": "43490eec-fcb7-4b59-8625-910cc202d066",
+        "chatSessionId": "ab281ff3-4dc0-4415-a050-cef8e5c8fa39",
+        "timestamp": 1781169637795
+      }
+    ],
+    "2.2 Create TypeScript domain types": [
+      {
+        "executionId": "43490eec-fcb7-4b59-8625-910cc202d066",
+        "chatSessionId": "ab281ff3-4dc0-4415-a050-cef8e5c8fa39",
+        "timestamp": 1781169632217
+      },
+      {
+        "executionId": "43490eec-fcb7-4b59-8625-910cc202d066",
+        "chatSessionId": "ab281ff3-4dc0-4415-a050-cef8e5c8fa39",
+        "timestamp": 1781169638669
+      }
+    ],
+    "3.1 Define ProposalOutput Zod schema": [
+      {
+        "executionId": "43490eec-fcb7-4b59-8625-910cc202d066",
+        "chatSessionId": "ab281ff3-4dc0-4415-a050-cef8e5c8fa39",
+        "timestamp": 1781169632221
+      },
+      {
+        "executionId": "43490eec-fcb7-4b59-8625-910cc202d066",
+        "chatSessionId": "ab281ff3-4dc0-4415-a050-cef8e5c8fa39",
+        "timestamp": 1781169646078
+      },
+      {
+        "executionId": "43490eec-fcb7-4b59-8625-910cc202d066",
+        "chatSessionId": "ab281ff3-4dc0-4415-a050-cef8e5c8fa39",
+        "timestamp": 1781169854213
+      }
+    ],
+    "3.2 Define CritiqueOutput Zod schema": [
+      {
+        "executionId": "43490eec-fcb7-4b59-8625-910cc202d066",
+        "chatSessionId": "ab281ff3-4dc0-4415-a050-cef8e5c8fa39",
+        "timestamp": 1781169632225
+      },
+      {
+        "executionId": "43490eec-fcb7-4b59-8625-910cc202d066",
+        "chatSessionId": "ab281ff3-4dc0-4415-a050-cef8e5c8fa39",
+        "timestamp": 1781169646838
+      },
+      {
+        "executionId": "43490eec-fcb7-4b59-8625-910cc202d066",
+        "chatSessionId": "ab281ff3-4dc0-4415-a050-cef8e5c8fa39",
+        "timestamp": 1781169854893
+      }
+    ],
+    "3.3 Define RevisionOutput Zod schema": [
+      {
+        "executionId": "43490eec-fcb7-4b59-8625-910cc202d066",
+        "chatSessionId": "ab281ff3-4dc0-4415-a050-cef8e5c8fa39",
+        "timestamp": 1781169632229
+      },
+      {
+        "executionId": "43490eec-fcb7-4b59-8625-910cc202d066",
+        "chatSessionId": "ab281ff3-4dc0-4415-a050-cef8e5c8fa39",
+        "timestamp": 1781169647559
+      },
+      {
+        "executionId": "43490eec-fcb7-4b59-8625-910cc202d066",
+        "chatSessionId": "ab281ff3-4dc0-4415-a050-cef8e5c8fa39",
+        "timestamp": 1781169855643
+      }
+    ],
+    "3.4 Define ConsensusOutput Zod schema": [
+      {
+        "executionId": "43490eec-fcb7-4b59-8625-910cc202d066",
+        "chatSessionId": "ab281ff3-4dc0-4415-a050-cef8e5c8fa39",
+        "timestamp": 1781169632244
+      },
+      {
+        "executionId": "43490eec-fcb7-4b59-8625-910cc202d066",
+        "chatSessionId": "ab281ff3-4dc0-4415-a050-cef8e5c8fa39",
+        "timestamp": 1781169648375
+      },
+      {
+        "executionId": "43490eec-fcb7-4b59-8625-910cc202d066",
+        "chatSessionId": "ab281ff3-4dc0-4415-a050-cef8e5c8fa39",
+        "timestamp": 1781169856410
+      }
+    ],
+    "4.1 Implement the Event Store": [
+      {
+        "executionId": "43490eec-fcb7-4b59-8625-910cc202d066",
+        "chatSessionId": "ab281ff3-4dc0-4415-a050-cef8e5c8fa39",
+        "timestamp": 1781169632248
+      },
+      {
+        "executionId": "43490eec-fcb7-4b59-8625-910cc202d066",
+        "chatSessionId": "ab281ff3-4dc0-4415-a050-cef8e5c8fa39",
+        "timestamp": 1781169863833
+      },
+      {
+        "executionId": "43490eec-fcb7-4b59-8625-910cc202d066",
+        "chatSessionId": "ab281ff3-4dc0-4415-a050-cef8e5c8fa39",
+        "timestamp": 1781170413295
+      }
+    ],
+    "4.3 Implement the State Projector": [
+      {
+        "executionId": "43490eec-fcb7-4b59-8625-910cc202d066",
+        "chatSessionId": "ab281ff3-4dc0-4415-a050-cef8e5c8fa39",
+        "timestamp": 1781169632253
+      },
+      {
+        "executionId": "43490eec-fcb7-4b59-8625-910cc202d066",
+        "chatSessionId": "ab281ff3-4dc0-4415-a050-cef8e5c8fa39",
+        "timestamp": 1781170427265
+      },
+      {
+        "executionId": "43490eec-fcb7-4b59-8625-910cc202d066",
+        "chatSessionId": "ab281ff3-4dc0-4415-a050-cef8e5c8fa39",
+        "timestamp": 1781170875098
+      }
+    ],
+    "4.6 Implement SnapshotManager": [
+      {
+        "executionId": "43490eec-fcb7-4b59-8625-910cc202d066",
+        "chatSessionId": "ab281ff3-4dc0-4415-a050-cef8e5c8fa39",
+        "timestamp": 1781169632257
+      },
+      {
+        "executionId": "43490eec-fcb7-4b59-8625-910cc202d066",
+        "chatSessionId": "ab281ff3-4dc0-4415-a050-cef8e5c8fa39",
+        "timestamp": 1781170882886
+      },
+      {
+        "executionId": "43490eec-fcb7-4b59-8625-910cc202d066",
+        "chatSessionId": "ab281ff3-4dc0-4415-a050-cef8e5c8fa39",
+        "timestamp": 1781171474156
+      }
+    ],
+    "5.1 Implement the Artifact Store": [
+      {
+        "executionId": "43490eec-fcb7-4b59-8625-910cc202d066",
+        "chatSessionId": "ab281ff3-4dc0-4415-a050-cef8e5c8fa39",
+        "timestamp": 1781169632262
+      },
+      {
+        "executionId": "43490eec-fcb7-4b59-8625-910cc202d066",
+        "chatSessionId": "ab281ff3-4dc0-4415-a050-cef8e5c8fa39",
+        "timestamp": 1781170883616
+      },
+      {
+        "executionId": "43490eec-fcb7-4b59-8625-910cc202d066",
+        "chatSessionId": "ab281ff3-4dc0-4415-a050-cef8e5c8fa39",
+        "timestamp": 1781171475055
+      }
+    ],
+    "5.3 Implement SessionLock": [
+      {
+        "executionId": "43490eec-fcb7-4b59-8625-910cc202d066",
+        "chatSessionId": "ab281ff3-4dc0-4415-a050-cef8e5c8fa39",
+        "timestamp": 1781169632266
+      },
+      {
+        "executionId": "43490eec-fcb7-4b59-8625-910cc202d066",
+        "chatSessionId": "ab281ff3-4dc0-4415-a050-cef8e5c8fa39",
+        "timestamp": 1781171479298
+      },
+      {
+        "executionId": "43490eec-fcb7-4b59-8625-910cc202d066",
+        "chatSessionId": "ab281ff3-4dc0-4415-a050-cef8e5c8fa39",
+        "timestamp": 1781171609146
+      }
+    ],
+    "6. Checkpoint — Domain layer tests pass": [
+      {
+        "executionId": "43490eec-fcb7-4b59-8625-910cc202d066",
+        "chatSessionId": "ab281ff3-4dc0-4415-a050-cef8e5c8fa39",
+        "timestamp": 1781169632277
+      }
+    ],
+    "7.1 Implement TokenBudgetManager": [
+      {
+        "executionId": "43490eec-fcb7-4b59-8625-910cc202d066",
+        "chatSessionId": "ab281ff3-4dc0-4415-a050-cef8e5c8fa39",
+        "timestamp": 1781169632281
+      },
+      {
+        "executionId": "43490eec-fcb7-4b59-8625-910cc202d066",
+        "chatSessionId": "ab281ff3-4dc0-4415-a050-cef8e5c8fa39",
+        "timestamp": 1781171480165
+      },
+      {
+        "executionId": "43490eec-fcb7-4b59-8625-910cc202d066",
+        "chatSessionId": "ab281ff3-4dc0-4415-a050-cef8e5c8fa39",
+        "timestamp": 1781171609807
+      }
+    ],
+    "8.1 Implement LLM Provider with model tier support": [
+      {
+        "executionId": "43490eec-fcb7-4b59-8625-910cc202d066",
+        "chatSessionId": "ab281ff3-4dc0-4415-a050-cef8e5c8fa39",
+        "timestamp": 1781169632286
+      },
+      {
+        "executionId": "43490eec-fcb7-4b59-8625-910cc202d066",
+        "chatSessionId": "ab281ff3-4dc0-4415-a050-cef8e5c8fa39",
+        "timestamp": 1781171615673
+      },
+      {
+        "executionId": "43490eec-fcb7-4b59-8625-910cc202d066",
+        "chatSessionId": "ab281ff3-4dc0-4415-a050-cef8e5c8fa39",
+        "timestamp": 1781171777380
+      }
+    ],
+    "8.2 Create agent configurations": [
+      {
+        "executionId": "43490eec-fcb7-4b59-8625-910cc202d066",
+        "chatSessionId": "ab281ff3-4dc0-4415-a050-cef8e5c8fa39",
+        "timestamp": 1781169632291
+      },
+      {
+        "executionId": "43490eec-fcb7-4b59-8625-910cc202d066",
+        "chatSessionId": "ab281ff3-4dc0-4415-a050-cef8e5c8fa39",
+        "timestamp": 1781171616544
+      },
+      {
+        "executionId": "43490eec-fcb7-4b59-8625-910cc202d066",
+        "chatSessionId": "ab281ff3-4dc0-4415-a050-cef8e5c8fa39",
+        "timestamp": 1781171778127
+      }
+    ],
+    "9.1 Implement WorkspaceSummaryService": [
+      {
+        "executionId": "43490eec-fcb7-4b59-8625-910cc202d066",
+        "chatSessionId": "ab281ff3-4dc0-4415-a050-cef8e5c8fa39",
+        "timestamp": 1781169632298
+      }
+    ],
+    "9.2 Implement RoundSummaryService": [
+      {
+        "executionId": "43490eec-fcb7-4b59-8625-910cc202d066",
+        "chatSessionId": "ab281ff3-4dc0-4415-a050-cef8e5c8fa39",
+        "timestamp": 1781169632302
+      }
+    ],
+    "9.3 Implement ArtifactSummaryService": [
+      {
+        "executionId": "43490eec-fcb7-4b59-8625-910cc202d066",
+        "chatSessionId": "ab281ff3-4dc0-4415-a050-cef8e5c8fa39",
+        "timestamp": 1781169632313
+      }
+    ],
+    "9.4 Implement ContextAssembler": [
+      {
+        "executionId": "43490eec-fcb7-4b59-8625-910cc202d066",
+        "chatSessionId": "ab281ff3-4dc0-4415-a050-cef8e5c8fa39",
+        "timestamp": 1781169632317
+      }
+    ],
+    "10.1 Implement OutputValidator": [
+      {
+        "executionId": "43490eec-fcb7-4b59-8625-910cc202d066",
+        "chatSessionId": "ab281ff3-4dc0-4415-a050-cef8e5c8fa39",
+        "timestamp": 1781169632321
+      }
+    ],
+    "10.2 Implement PromptBuilder": [
+      {
+        "executionId": "43490eec-fcb7-4b59-8625-910cc202d066",
+        "chatSessionId": "ab281ff3-4dc0-4415-a050-cef8e5c8fa39",
+        "timestamp": 1781169632325
+      }
+    ],
+    "11.1 Implement Agent Executor": [
+      {
+        "executionId": "43490eec-fcb7-4b59-8625-910cc202d066",
+        "chatSessionId": "ab281ff3-4dc0-4415-a050-cef8e5c8fa39",
+        "timestamp": 1781169632329
+      }
+    ],
+    "11.2 Implement Round Orchestrator (parallel execution per stage)": [
+      {
+        "executionId": "43490eec-fcb7-4b59-8625-910cc202d066",
+        "chatSessionId": "ab281ff3-4dc0-4415-a050-cef8e5c8fa39",
+        "timestamp": 1781169632334
+      }
+    ],
+    "11.8 Implement CrashRecovery": [
+      {
+        "executionId": "43490eec-fcb7-4b59-8625-910cc202d066",
+        "chatSessionId": "ab281ff3-4dc0-4415-a050-cef8e5c8fa39",
+        "timestamp": 1781169632338
+      }
+    ],
+    "12. Checkpoint — Engine tests pass": [
+      {
+        "executionId": "43490eec-fcb7-4b59-8625-910cc202d066",
+        "chatSessionId": "ab281ff3-4dc0-4415-a050-cef8e5c8fa39",
+        "timestamp": 1781169632342
+      }
+    ],
+    "13.1 Implement session creation and listing": [
+      {
+        "executionId": "43490eec-fcb7-4b59-8625-910cc202d066",
+        "chatSessionId": "ab281ff3-4dc0-4415-a050-cef8e5c8fa39",
+        "timestamp": 1781169632347
+      }
+    ],
+    "13.2 Implement session detail": [
+      {
+        "executionId": "43490eec-fcb7-4b59-8625-910cc202d066",
+        "chatSessionId": "ab281ff3-4dc0-4415-a050-cef8e5c8fa39",
+        "timestamp": 1781169632351
+      }
+    ],
+    "13.3 Implement event log": [
+      {
+        "executionId": "43490eec-fcb7-4b59-8625-910cc202d066",
+        "chatSessionId": "ab281ff3-4dc0-4415-a050-cef8e5c8fa39",
+        "timestamp": 1781169632355
+      }
+    ],
+    "14.1 Implement round start": [
+      {
+        "executionId": "43490eec-fcb7-4b59-8625-910cc202d066",
+        "chatSessionId": "ab281ff3-4dc0-4415-a050-cef8e5c8fa39",
+        "timestamp": 1781169632360
+      }
+    ],
+    "14.2 Implement round detail": [
+      {
+        "executionId": "43490eec-fcb7-4b59-8625-910cc202d066",
+        "chatSessionId": "ab281ff3-4dc0-4415-a050-cef8e5c8fa39",
+        "timestamp": 1781169632365
+      }
+    ],
+    "14.3 Implement intervention": [
+      {
+        "executionId": "43490eec-fcb7-4b59-8625-910cc202d066",
+        "chatSessionId": "ab281ff3-4dc0-4415-a050-cef8e5c8fa39",
+        "timestamp": 1781169632369
+      }
+    ],
+    "14.4 Implement advance (skip intervention)": [
+      {
+        "executionId": "43490eec-fcb7-4b59-8625-910cc202d066",
+        "chatSessionId": "ab281ff3-4dc0-4415-a050-cef8e5c8fa39",
+        "timestamp": 1781169632374
+      }
+    ],
+    "14.5 Implement artifact CRUD": [
+      {
+        "executionId": "43490eec-fcb7-4b59-8625-910cc202d066",
+        "chatSessionId": "ab281ff3-4dc0-4415-a050-cef8e5c8fa39",
+        "timestamp": 1781169632377
+      }
+    ],
+    "14.6 Implement token usage endpoint": [
+      {
+        "executionId": "43490eec-fcb7-4b59-8625-910cc202d066",
+        "chatSessionId": "ab281ff3-4dc0-4415-a050-cef8e5c8fa39",
+        "timestamp": 1781169632382
+      }
+    ],
+    "15.1 Implement session export": [
+      {
+        "executionId": "43490eec-fcb7-4b59-8625-910cc202d066",
+        "chatSessionId": "ab281ff3-4dc0-4415-a050-cef8e5c8fa39",
+        "timestamp": 1781169632386
+      }
+    ],
+    "15.3 Implement replay": [
+      {
+        "executionId": "43490eec-fcb7-4b59-8625-910cc202d066",
+        "chatSessionId": "ab281ff3-4dc0-4415-a050-cef8e5c8fa39",
+        "timestamp": 1781169632390
+      }
+    ],
+    "15.5 Implement config endpoint": [
+      {
+        "executionId": "43490eec-fcb7-4b59-8625-910cc202d066",
+        "chatSessionId": "ab281ff3-4dc0-4415-a050-cef8e5c8fa39",
+        "timestamp": 1781169632396
+      }
+    ],
+    "16. Checkpoint — API tests pass": [
+      {
+        "executionId": "43490eec-fcb7-4b59-8625-910cc202d066",
+        "chatSessionId": "ab281ff3-4dc0-4415-a050-cef8e5c8fa39",
+        "timestamp": 1781169632400
+      }
+    ],
+    "17.1 Create root layout and global styles": [
+      {
+        "executionId": "43490eec-fcb7-4b59-8625-910cc202d066",
+        "chatSessionId": "ab281ff3-4dc0-4415-a050-cef8e5c8fa39",
+        "timestamp": 1781169632404
+      }
+    ],
+    "17.2 Implement home page with session list and new session form": [
+      {
+        "executionId": "43490eec-fcb7-4b59-8625-910cc202d066",
+        "chatSessionId": "ab281ff3-4dc0-4415-a050-cef8e5c8fa39",
+        "timestamp": 1781169632408
+      }
+    ],
+    "18.1 Create workspace layout (outcome-focused)": [
+      {
+        "executionId": "43490eec-fcb7-4b59-8625-910cc202d066",
+        "chatSessionId": "ab281ff3-4dc0-4415-a050-cef8e5c8fa39",
+        "timestamp": 1781169632412
+      }
+    ],
+    "18.2 Implement ArtifactsPanel (with provenance)": [
+      {
+        "executionId": "43490eec-fcb7-4b59-8625-910cc202d066",
+        "chatSessionId": "ab281ff3-4dc0-4415-a050-cef8e5c8fa39",
+        "timestamp": 1781169632415
+      }
+    ],
+    "18.3 Implement EngineeringOutcomesPanel": [
+      {
+        "executionId": "43490eec-fcb7-4b59-8625-910cc202d066",
+        "chatSessionId": "ab281ff3-4dc0-4415-a050-cef8e5c8fa39",
+        "timestamp": 1781169632419
+      }
+    ],
+    "18.4 Implement SharedWorkspace and InterventionPanel": [
+      {
+        "executionId": "43490eec-fcb7-4b59-8625-910cc202d066",
+        "chatSessionId": "ab281ff3-4dc0-4415-a050-cef8e5c8fa39",
+        "timestamp": 1781169632423
+      }
+    ],
+    "19.1 Implement Agent Panels (collapsible secondary) with progress streaming": [
+      {
+        "executionId": "43490eec-fcb7-4b59-8625-910cc202d066",
+        "chatSessionId": "ab281ff3-4dc0-4415-a050-cef8e5c8fa39",
+        "timestamp": 1781169632427
+      }
+    ],
+    "19.2 Implement ConsensusDashboard (with evidence verification)": [
+      {
+        "executionId": "43490eec-fcb7-4b59-8625-910cc202d066",
+        "chatSessionId": "ab281ff3-4dc0-4415-a050-cef8e5c8fa39",
+        "timestamp": 1781169632431
+      }
+    ],
+    "19.3 Implement DebateTimeline (collapsible tertiary/audit trail)": [
+      {
+        "executionId": "43490eec-fcb7-4b59-8625-910cc202d066",
+        "chatSessionId": "ab281ff3-4dc0-4415-a050-cef8e5c8fa39",
+        "timestamp": 1781169632437
+      }
+    ],
+    "19.4 Implement UI utilities": [
+      {
+        "executionId": "43490eec-fcb7-4b59-8625-910cc202d066",
+        "chatSessionId": "ab281ff3-4dc0-4415-a050-cef8e5c8fa39",
+        "timestamp": 1781169632442
+      }
+    ],
+    "20.1 Implement SWR hooks": [
+      {
+        "executionId": "43490eec-fcb7-4b59-8625-910cc202d066",
+        "chatSessionId": "ab281ff3-4dc0-4415-a050-cef8e5c8fa39",
+        "timestamp": 1781169632446
+      }
+    ],
+    "21. Checkpoint — Frontend renders correctly": [
+      {
+        "executionId": "43490eec-fcb7-4b59-8625-910cc202d066",
+        "chatSessionId": "ab281ff3-4dc0-4415-a050-cef8e5c8fa39",
+        "timestamp": 1781169632451
+      }
+    ],
+    "22.1 Wire round execution flow": [
+      {
+        "executionId": "43490eec-fcb7-4b59-8625-910cc202d066",
+        "chatSessionId": "ab281ff3-4dc0-4415-a050-cef8e5c8fa39",
+        "timestamp": 1781169632455
+      }
+    ],
+    "22.2 Wire artifact interactions": [
+      {
+        "executionId": "43490eec-fcb7-4b59-8625-910cc202d066",
+        "chatSessionId": "ab281ff3-4dc0-4415-a050-cef8e5c8fa39",
+        "timestamp": 1781169632459
+      }
+    ],
+    "22.3 Wire export and replay": [
+      {
+        "executionId": "43490eec-fcb7-4b59-8625-910cc202d066",
+        "chatSessionId": "ab281ff3-4dc0-4415-a050-cef8e5c8fa39",
+        "timestamp": 1781169632463
+      }
+    ],
+    "22.4 Wire clarification flow": [
+      {
+        "executionId": "43490eec-fcb7-4b59-8625-910cc202d066",
+        "chatSessionId": "ab281ff3-4dc0-4415-a050-cef8e5c8fa39",
+        "timestamp": 1781169632466
+      }
+    ],
+    "23.1 Implement error handling": [
+      {
+        "executionId": "43490eec-fcb7-4b59-8625-910cc202d066",
+        "chatSessionId": "ab281ff3-4dc0-4415-a050-cef8e5c8fa39",
+        "timestamp": 1781169632471
+      }
+    ],
+    "23.2 Implement session resume": [
+      {
+        "executionId": "43490eec-fcb7-4b59-8625-910cc202d066",
+        "chatSessionId": "ab281ff3-4dc0-4415-a050-cef8e5c8fa39",
+        "timestamp": 1781169632474
+      }
+    ],
+    "24. Final checkpoint — All tests pass": [
+      {
+        "executionId": "43490eec-fcb7-4b59-8625-910cc202d066",
+        "chatSessionId": "ab281ff3-4dc0-4415-a050-cef8e5c8fa39",
+        "timestamp": 1781169632480
+      }
+    ],
+    "1. Project scaffolding and configuration": [
+      {
+        "executionId": "43490eec-fcb7-4b59-8625-910cc202d066",
+        "chatSessionId": "ab281ff3-4dc0-4415-a050-cef8e5c8fa39",
+        "timestamp": 1781169637737
+      }
+    ],
+    "2. Domain types and Prisma schema (all models before any logic)": [
+      {
+        "executionId": "43490eec-fcb7-4b59-8625-910cc202d066",
+        "chatSessionId": "ab281ff3-4dc0-4415-a050-cef8e5c8fa39",
+        "timestamp": 1781169638673
+      }
+    ],
+    "3. Structured output Zod schemas": [
+      {
+        "executionId": "43490eec-fcb7-4b59-8625-910cc202d066",
+        "chatSessionId": "ab281ff3-4dc0-4415-a050-cef8e5c8fa39",
+        "timestamp": 1781169856414
+      }
+    ],
+    "4. Event Store and State Projector": [
+      {
+        "executionId": "43490eec-fcb7-4b59-8625-910cc202d066",
+        "chatSessionId": "ab281ff3-4dc0-4415-a050-cef8e5c8fa39",
+        "timestamp": 1781171474162
+      }
+    ],
+    "5. Artifact Store (with deduplication and provenance)": [
+      {
+        "executionId": "43490eec-fcb7-4b59-8625-910cc202d066",
+        "chatSessionId": "ab281ff3-4dc0-4415-a050-cef8e5c8fa39",
+        "timestamp": 1781171609151
+      }
+    ],
+    "7. Token Budget Manager": [
+      {
+        "executionId": "43490eec-fcb7-4b59-8625-910cc202d066",
+        "chatSessionId": "ab281ff3-4dc0-4415-a050-cef8e5c8fa39",
+        "timestamp": 1781171609812
+      }
+    ],
+    "8. LLM Provider and Agent Configuration": [
+      {
+        "executionId": "43490eec-fcb7-4b59-8625-910cc202d066",
+        "chatSessionId": "ab281ff3-4dc0-4415-a050-cef8e5c8fa39",
+        "timestamp": 1781171778132
+      }
+    ]
+  }
+}

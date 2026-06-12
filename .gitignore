@@ -1,0 +1,14 @@
+node_modules/
+.next/
+out/
+dev.db
+src/generated/
+.env
+.env.local
+.env.production
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+dist/
+build/
