@@ -30,13 +30,26 @@ import type { ZodError } from "zod";
 // =============================================================================
 
 /**
- * Attempts to parse a raw string as JSON.
+ * Strips a leading/trailing markdown code fence (```json ... ``` or ``` ... ```)
+ * if present. Haiku in particular wraps JSON in fences even when instructed
+ * otherwise; the schema validator should be tolerant of that since asking the
+ * model again with the same prompt usually produces the same fenced output.
+ */
+function stripCodeFence(raw: string): string {
+  const trimmed = raw.trim();
+  const fenceMatch = trimmed.match(/^```(?:json|JSON)?\s*\n?([\s\S]*?)\n?```\s*$/);
+  return fenceMatch ? fenceMatch[1].trim() : trimmed;
+}
+
+/**
+ * Attempts to parse a raw string as JSON. Tolerates a single surrounding
+ * markdown code fence (model wrappers like ```json ... ```).
  */
 function tryParseJson(
   raw: string
 ): { success: true; data: unknown } | { success: false; error: string } {
   try {
-    const data = JSON.parse(raw);
+    const data = JSON.parse(stripCodeFence(raw));
     return { success: true, data };
   } catch (e) {
     const message = e instanceof Error ? e.message : "Unknown parse error";

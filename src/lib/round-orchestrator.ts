@@ -104,9 +104,20 @@ async function executeArtifactOperations(
   sessionId: string,
   operations: ConsensusOutput["artifactOperations"],
   sourceEventId: string
-): Promise<{ created: number; updated: number }> {
+): Promise<{ created: number; updated: number; skipped: number }> {
   let created = 0;
   let updated = 0;
+  let skipped = 0;
+
+  // Pre-fetch existing artifact IDs so update/accept/reject ops that reference
+  // a non-existent ID (e.g. the consensus agent hallucinated a slug-style ID
+  // instead of using the real cuid) can be skipped without throwing — one
+  // bad ID would otherwise crash the entire round at the consensus stage.
+  const existing = await prisma.artifact.findMany({
+    where: { sessionId },
+    select: { id: true },
+  });
+  const existingIds = new Set(existing.map((a) => a.id));
 
   for (const op of operations) {
     switch (op.operation) {
@@ -121,34 +132,33 @@ async function executeArtifactOperations(
         created++;
         break;
       }
-      case "update": {
-        if (op.artifactId) {
+      case "update":
+      case "accept":
+      case "reject": {
+        if (!op.artifactId || !existingIds.has(op.artifactId)) {
+          console.warn(
+            `[orchestrator] Skipping consensus ${op.operation} for unknown artifactId=${op.artifactId ?? "<none>"} (title="${op.title ?? ""}")`
+          );
+          skipped++;
+          break;
+        }
+        if (op.operation === "update") {
           await artifactStore.updateArtifact(op.artifactId, {
             content: op.content,
             sourceEventId: op.sourceEventId ?? sourceEventId,
           });
-          updated++;
-        }
-        break;
-      }
-      case "accept": {
-        if (op.artifactId) {
+        } else if (op.operation === "accept") {
           await artifactStore.changeStatus(op.artifactId, "accepted");
-          updated++;
-        }
-        break;
-      }
-      case "reject": {
-        if (op.artifactId) {
+        } else {
           await artifactStore.changeStatus(op.artifactId, "rejected");
-          updated++;
         }
+        updated++;
         break;
       }
     }
   }
 
-  return { created, updated };
+  return { created, updated, skipped };
 }
 
 /**

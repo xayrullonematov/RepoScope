@@ -118,7 +118,16 @@ async function callWithRetry<T>(params: {
     });
   }
 
-  // All retries exhausted — throw error with details
+  // All retries exhausted — throw error with details.
+  // Log first so failures surface even when the caller (e.g. Promise.allSettled
+  // in the orchestrator) swallows the rejection.
+  const lastSnippet = (lastResponse?.content ?? "").slice(0, 400);
+  console.error(
+    `[agent-executor] ${stage} validation failed after ${MAX_VALIDATION_RETRIES + 1} attempts ` +
+      `(agent=${agentId ?? "system"}, model=${lastResponse?.model ?? "?"}). ` +
+      `Errors: ${lastErrors.join("; ")}. ` +
+      `Last response snippet: ${lastSnippet}`
+  );
   throw new Error(
     `Validation failed after ${MAX_VALIDATION_RETRIES + 1} attempts for ${stage} ` +
       `(agent: ${agentId ?? "system"}). Errors: ${lastErrors.join("; ")}`
