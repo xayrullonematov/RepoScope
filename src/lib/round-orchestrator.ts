@@ -12,6 +12,9 @@
  * - Snapshot created after round-completed event
  */
 
+import { writeFile, mkdir } from "node:fs/promises";
+import path from "node:path";
+import { generateSessionExport } from "@/lib/export";
 import { eventStore } from "@/lib/event-store";
 import { artifactStore } from "@/lib/artifact-store";
 import { sessionLock } from "@/lib/session-lock";
@@ -317,6 +320,18 @@ export const roundOrchestrator: RoundOrchestrator = {
         stage: null,
         content: { round: nextRound },
       });
+
+      // Auto-export session markdown
+      try {
+        const { markdown, filename } = await generateSessionExport(sessionId);
+        const dir = path.join(process.cwd(), ".movistan", "exports");
+        await mkdir(dir, { recursive: true });
+        const filepath = path.join(dir, filename);
+        await writeFile(filepath, markdown);
+        console.log(`[export] Written: ${filepath}`);
+      } catch (e) {
+        // Export failure must not break the round
+      }
 
       // Update session stage to awaiting-intervention
       await prisma.session.update({
