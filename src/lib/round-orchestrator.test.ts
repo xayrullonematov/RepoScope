@@ -41,6 +41,11 @@ type Spec = {
   // 11.5 — extra delay in the stub to amplify the parallel-vs-sequential
   // signal. Total wall time scales with this for sequential dispatch.
   stubDelayMs: number;
+  // Regression: when set, the named agent returns an artifactSuggestion with
+  // content: undefined at the named stage.
+  undefinedContentAt: { stage: "proposal" | "critique" | "revision"; agentId: AgentId } | null;
+  // Regression: when set, consensus includes an update op referencing this ID.
+  hallucinatedArtifactId: string | null;
 };
 
 const DEFAULT_SPEC: Spec = {
@@ -51,6 +56,8 @@ const DEFAULT_SPEC: Spec = {
   clarifyAt: null,
   consensusArtifactOps: [],
   stubDelayMs: 0,
+  undefinedContentAt: null,
+  hallucinatedArtifactId: null,
 };
 
 let currentSpec: Spec = { ...DEFAULT_SPEC };
@@ -136,7 +143,11 @@ vi.mock("@/lib/llm-provider", () => ({
               risks: [],
               assumptions: [],
               confidence: currentSpec.proposalConfidence,
-              artifactSuggestions: [],
+              artifactSuggestions:
+                currentSpec.undefinedContentAt?.stage === "proposal" &&
+                currentSpec.undefinedContentAt?.agentId === agentId
+                  ? [{ type: "decision", title: "Broken suggestion", content: undefined }]
+                  : [],
               references: [],
               needsClarification: clarifyHere,
               clarificationQuestions: clarifyHere
@@ -173,7 +184,11 @@ vi.mock("@/lib/llm-provider", () => ({
               maintainedPoints: [],
               newArguments: [],
               confidence: currentSpec.critiqueConfidence,
-              artifactSuggestions: [],
+              artifactSuggestions:
+                currentSpec.undefinedContentAt?.stage === "revision" &&
+                currentSpec.undefinedContentAt?.agentId === agentId
+                  ? [{ type: "decision", title: "Broken revision artifact", content: undefined }]
+                  : [],
               needsClarification: clarifyHere,
               clarificationQuestions: clarifyHere
                 ? [`Revision-stage clarification from ${agentId}.`]
@@ -189,7 +204,19 @@ vi.mock("@/lib/llm-provider", () => ({
               identifiedRisks: [],
               openQuestions: [],
               overallConfidence: currentSpec.consensusConfidence,
-              artifactOperations: currentSpec.consensusArtifactOps,
+              artifactOperations: [
+                ...currentSpec.consensusArtifactOps,
+                ...(currentSpec.hallucinatedArtifactId
+                  ? [
+                      {
+                        operation: "update",
+                        artifactId: currentSpec.hallucinatedArtifactId,
+                        title: "Ghost artifact",
+                        content: "updated content",
+                      },
+                    ]
+                  : []),
+              ],
             };
             break;
         }
@@ -233,7 +260,7 @@ const ALL_AGENTS: AgentId[] = [
   "product-engineer",
 ];
 
-async function setupSession(sessionId: string): Promise<void> {
+async function setupSession(sessionId: string, opts?: { config?: string }): Promise<void> {
   await prisma.tokenUsage.deleteMany({ where: { sessionId } });
   await prisma.sessionSnapshot.deleteMany({ where: { sessionId } });
   await prisma.artifactVersion.deleteMany({});
@@ -247,6 +274,7 @@ async function setupSession(sessionId: string): Promise<void> {
       problemDescription: "Verify orchestrator invariants.",
       status: "active",
       currentRound: 0,
+      config: opts?.config ?? null,
     },
   });
 }
@@ -510,4 +538,76 @@ describe("Round Orchestrator Consensus Artifact Operations (Property 19 / Task 1
       { numRuns: 6 }
     );
   }, 90_000);
+});
+
+// =============================================================================
+// Regression — Multi-round resilience test
+//
+// Drives a full round through all 4 stages with:
+//   1. Clarification suppression (clarificationPolicy: "suppress")
+//   2. Undefined content in artifactSuggestions (skipped, not persisted)
+//   3. Hallucinated artifact ID in consensus ops (skipped, round completes)
+// =============================================================================
+describe("Round Orchestrator Multi-Round Regression", () => {
+  it("completes a full round despite clarification requests, undefined content, and hallucinated IDs", async () => {
+    const sessionId = "sess-regression";
+
+    await setupSession(sessionId, {
+      config: JSON.stringify({ clarificationPolicy: "suppress" }),
+    });
+
+    currentSpec = {
+      ...DEFAULT_SPEC,
+      // Every agent wants to clarify at proposal stage
+      clarifyAt: { stage: "proposal", agentId: "senior-engineer" },
+      // perf-engineer returns undefined content in revision
+      undefinedContentAt: { stage: "revision", agentId: "performance-engineer" },
+      // Consensus references a non-existent artifact ID
+      hallucinatedArtifactId: "hallucinated-slug-that-does-not-exist",
+      // Also create one real artifact so we can verify it succeeds
+      consensusArtifactOps: [
+        {
+          operation: "create",
+          type: "decision",
+          title: "Auth strategy",
+          content: "Use JWT with short-lived tokens",
+        },
+      ],
+    };
+
+    await roundOrchestrator.startRound(sessionId);
+
+    // 1. Clarification suppressed — session should NOT be paused
+    const session = await prisma.session.findUniqueOrThrow({
+      where: { id: sessionId },
+    });
+    expect(session.status).toBe("active");
+    expect(session.currentStage).toBe("awaiting-intervention");
+    expect(session.currentRound).toBe(1);
+
+    // No clarification-request event should exist
+    const events = await eventStore.getSessionEvents(sessionId);
+    const clarEvents = events.filter((e) => e.type === "clarification-request");
+    expect(clarEvents.length).toBe(0);
+
+    // 2. Round completed despite undefined content and hallucinated ID
+    expect(events.some((e) => e.type === "round-completed")).toBe(true);
+
+    // 3. The real artifact was created; the undefined-content one was not
+    const artifacts = await artifactStore.getSessionArtifacts(sessionId);
+    const authArtifact = artifacts.find((a) => a.title === "Auth strategy");
+    expect(authArtifact).toBeDefined();
+    expect(authArtifact!.content).toBe("Use JWT with short-lived tokens");
+
+    // The broken suggestion with undefined content must NOT exist
+    const brokenArtifact = artifacts.find(
+      (a) => a.title === "Broken revision artifact"
+    );
+    expect(brokenArtifact).toBeUndefined();
+
+    // 4. All 4 stages produced events
+    for (const stage of STAGE_ORDER) {
+      expect(events.some((e) => e.stage === stage)).toBe(true);
+    }
+  }, 30_000);
 });
