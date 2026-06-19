@@ -69,6 +69,13 @@ async function processArtifactSuggestions(
   let updated = 0;
 
   for (const suggestion of suggestions) {
+    if (!suggestion.content) {
+      console.warn(
+        `[orchestrator] Skipping artifact suggestion with undefined content (title="${suggestion.title}", type="${suggestion.type}")`
+      );
+      continue;
+    }
+
     const existing = await artifactStore.findByTitleAndType(
       sessionId,
       suggestion.type as import("@/types/domain").ArtifactType,
@@ -123,6 +130,13 @@ async function executeArtifactOperations(
   for (const op of operations) {
     switch (op.operation) {
       case "create": {
+        if (!op.content) {
+          console.warn(
+            `[orchestrator] Skipping consensus create with undefined content (title="${op.title ?? ""}")`
+          );
+          skipped++;
+          break;
+        }
         await artifactStore.createArtifact({
           sessionId,
           type: (op.type ?? "decision") as import("@/types/domain").ArtifactType,
@@ -144,6 +158,13 @@ async function executeArtifactOperations(
           break;
         }
         if (op.operation === "update") {
+          if (!op.content) {
+            console.warn(
+              `[orchestrator] Skipping consensus update with undefined content (artifactId="${op.artifactId}")`
+            );
+            skipped++;
+            break;
+          }
           await artifactStore.updateArtifact(op.artifactId, {
             content: op.content,
             sourceEventId: op.sourceEventId ?? sourceEventId,
