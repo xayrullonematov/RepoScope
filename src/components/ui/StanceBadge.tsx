@@ -9,21 +9,21 @@ interface StanceBadgeProps {
 export default function StanceBadge({ stance }: StanceBadgeProps) {
   if (!stance) {
     return (
-      <span className="px-1.5 py-0.5 text-xs rounded bg-gray-800 text-gray-500 border border-gray-700">
-        —
+      <span className="px-1.5 py-0.5 text-xs rounded-md bg-gray-800 text-gray-500 border border-gray-700">
+        --
       </span>
     );
   }
 
   const colors: Record<Stance, string> = {
-    agree: "bg-green-900/50 text-green-400 border-green-700",
-    disagree: "bg-red-900/50 text-red-400 border-red-700",
-    "partially-concede": "bg-yellow-900/50 text-yellow-400 border-yellow-700",
-    strengthen: "bg-blue-900/50 text-blue-400 border-blue-700",
+    agree: "bg-green-500/15 text-green-400 border-green-600/50",
+    disagree: "bg-red-500/15 text-red-400 border-red-600/50",
+    "partially-concede": "bg-amber-500/15 text-amber-400 border-amber-600/50",
+    strengthen: "bg-blue-500/15 text-blue-400 border-blue-600/50",
   };
 
   return (
-    <span className={`px-1.5 py-0.5 text-xs rounded border ${colors[stance]}`}>
+    <span className={`px-2 py-0.5 text-xs font-medium rounded-md border ${colors[stance]}`}>
       {stance}
     </span>
   );
