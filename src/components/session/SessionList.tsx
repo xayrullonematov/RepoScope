@@ -4,7 +4,8 @@ import { useRouter } from "next/navigation";
 
 interface SessionSummary {
   id: string;
-  problemDescription: string;
+  title: string;
+  problemDescription?: string;
   status: "active" | "paused" | "completed";
   currentRound: number;
   createdAt: string;
@@ -35,8 +36,7 @@ export default function SessionList({ sessions }: SessionListProps) {
         >
           <div className="flex items-start justify-between gap-2">
             <h3 className="text-sm font-medium text-gray-100 line-clamp-2">
-              {session.problemDescription.slice(0, 100)}
-              {session.problemDescription.length > 100 ? "..." : ""}
+              {(session.title || session.problemDescription || "Untitled").slice(0, 100)}
             </h3>
             <StatusBadge status={session.status} />
           </div>
