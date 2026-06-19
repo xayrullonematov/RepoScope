@@ -34,6 +34,7 @@ import type {
   RevisionOutput,
   RoundOrchestrator,
   RoundStage,
+  SessionConfig,
   StageResult,
   StageTransition,
 } from "@/types/domain";
@@ -664,16 +665,32 @@ export const roundOrchestrator: RoundOrchestrator = {
 
     // Return result based on whether clarification is needed
     if (clarificationQuestions.length > 0) {
-      // Persist clarification-request event
-      await eventStore.appendEvent({
-        sessionId,
-        type: "clarification-request",
-        round: currentRound,
-        stage: currentStage,
-        content: { questions: clarificationQuestions },
-      });
+      // Check session config for clarification policy
+      const config: SessionConfig = session.config
+        ? JSON.parse(session.config)
+        : {};
+      const policy = config.clarificationPolicy ?? "allow";
 
-      return { type: "clarification-needed", questions: clarificationQuestions };
+      // "suppress" or 0 → never pause for clarification
+      // number > 0 → pause but cap questions to that count
+      // "allow" → pause with all questions (default)
+      if (policy !== "suppress" && policy !== 0) {
+        const questions =
+          typeof policy === "number"
+            ? clarificationQuestions.slice(0, policy)
+            : clarificationQuestions;
+
+        await eventStore.appendEvent({
+          sessionId,
+          type: "clarification-request",
+          round: currentRound,
+          stage: currentStage,
+          content: { questions },
+        });
+
+        return { type: "clarification-needed", questions };
+      }
+      // Policy suppressed — continue as if no clarification was needed
     }
 
     return {

@@ -55,6 +55,19 @@ export type ArtifactType =
 /** Lifecycle states for artifacts */
 export type ArtifactStatus = "draft" | "accepted" | "rejected";
 
+/**
+ * clarificationPolicy controls whether agents can pause a round for clarification.
+ * - "allow"    — default, pause on any clarification request
+ * - "suppress" — ignore all clarification requests, never pause
+ * - number     — max questions allowed per stage before suppressing the rest
+ */
+export type ClarificationPolicy = "allow" | "suppress" | number;
+
+/** Session-level configuration stored as JSON in the Session.config column */
+export interface SessionConfig {
+  clarificationPolicy?: ClarificationPolicy;
+}
+
 /** Risk severity levels */
 export type Severity = "high" | "medium" | "low";
 

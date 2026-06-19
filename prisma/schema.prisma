@@ -20,6 +20,7 @@ model Session {
   currentRound       Int       @default(0)
   currentStage       String?   // proposal | critique | revision | consensus | awaiting-intervention
   tokenBudget        Int?      // configurable token limit for the session
+  config             String?   // JSON: { clarificationPolicy?: "allow" | "suppress" | number }
   lockedBy           String?   // lock ID for preventing concurrent round starts
   lockedAt           DateTime? // timestamp when lock was acquired (stale after 5 min)
   createdAt          DateTime  @default(now())

@@ -41,6 +41,7 @@ export async function POST(request: Request) {
       tokenBudget?: number;
       title?: string;
       priorSessionSummary?: string;
+      config?: { clarificationPolicy?: "allow" | "suppress" | number };
     };
 
     const { problemDescription, constraints, tokenBudget, title } = body;
@@ -60,6 +61,7 @@ export async function POST(request: Request) {
         status: "active",
         currentRound: 0,
         tokenBudget: tokenBudget ?? null,
+        config: body.config ? JSON.stringify(body.config) : null,
       },
     });
 
