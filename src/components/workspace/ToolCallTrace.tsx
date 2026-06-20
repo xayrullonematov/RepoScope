@@ -32,7 +32,7 @@ const agentDotColors: Record<AgentType, string> = {
   "product-engineer": "bg-violet-500",
 };
 
-function parseStageProgress(event: PersistedEvent): StageProgressData | null {
+export function parseStageProgress(event: PersistedEvent): StageProgressData | null {
   try {
     const data = JSON.parse(event.content);
     if (!data.groundedByRepo) return null;
@@ -54,12 +54,19 @@ export default function ToolCallTrace({ events, currentStage }: ToolCallTracePro
   const [expanded, setExpanded] = useState(false);
 
   // Extract stage-progress events with tool data
+  const stageProgressEvents = useMemo(
+    () => events.filter((e) => e.type === "stage-progress"),
+    [events]
+  );
+
   const traceData = useMemo(() => {
-    return events
-      .filter((e) => e.type === "stage-progress")
+    return stageProgressEvents
       .map(parseStageProgress)
       .filter((d): d is StageProgressData => d !== null);
-  }, [events]);
+  }, [stageProgressEvents]);
+
+  // Count how many events were filtered out (not repo-grounded)
+  const filteredCount = stageProgressEvents.length - traceData.length;
 
   // Find in-progress agents (status !== "completed")
   const activeTraces = useMemo(
@@ -73,7 +80,7 @@ export default function ToolCallTrace({ events, currentStage }: ToolCallTracePro
     [traceData]
   );
 
-  if (traceData.length === 0) {
+  if (traceData.length === 0 && filteredCount === 0) {
     return null;
   }
 
@@ -101,6 +108,11 @@ export default function ToolCallTrace({ events, currentStage }: ToolCallTracePro
           <span className="text-[10px] text-gray-500 font-mono">
             {traceData.length} event{traceData.length !== 1 ? "s" : ""}
           </span>
+          {filteredCount > 0 && (
+            <span className="text-[10px] text-gray-500 italic">
+              ({filteredCount} hidden)
+            </span>
+          )}
         </div>
         <svg
           className={`w-3.5 h-3.5 text-gray-500 transition-transform ${expanded ? "rotate-180" : ""}`}
@@ -181,6 +193,13 @@ export default function ToolCallTrace({ events, currentStage }: ToolCallTracePro
                 ))}
               </tbody>
             </table>
+          )}
+
+          {/* Filtered events indicator */}
+          {filteredCount > 0 && (
+            <p className="text-[10px] text-gray-500 italic pt-1">
+              {filteredCount} event{filteredCount !== 1 ? "s" : ""} hidden (not repo-grounded)
+            </p>
           )}
         </div>
       )}

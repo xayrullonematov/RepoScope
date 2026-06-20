@@ -68,6 +68,7 @@ export default function DebateChat({
   const scrollRef = useRef<HTMLDivElement>(null);
   const { events, isLoading } = useEventStream(sessionId);
   const [selectedRoundOverride, setSelectedRound] = useState<number | null>(null);
+  const [allExpanded, setAllExpanded] = useState<boolean | undefined>(undefined);
   const selectedRound = selectedRoundOverride === null || selectedRoundOverride > currentRound
     ? currentRound
     : selectedRoundOverride;
@@ -171,6 +172,19 @@ export default function DebateChat({
         />
       )}
 
+      {/* Expand All / Collapse All toggle */}
+      {filteredEvents.length > 0 && (
+        <div className="flex items-center px-4 py-1.5 border-b border-gray-800 shrink-0">
+          <button
+            onClick={() => setAllExpanded(allExpanded === true ? false : true)}
+            className="text-xs text-blue-400 hover:text-blue-300 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/70 rounded px-1.5 py-0.5"
+            aria-label={allExpanded === true ? "Collapse all messages" : "Expand all messages"}
+          >
+            {allExpanded === true ? "Collapse All" : "Expand All"}
+          </button>
+        </div>
+      )}
+
       <div ref={scrollRef} className="flex-1 overflow-y-auto px-4 py-4 space-y-4">
         {/* Tool Call Trace - shows tool usage from stage-progress events */}
         <ToolCallTrace events={events} currentStage={currentStage} />
@@ -207,6 +221,7 @@ export default function DebateChat({
                     content={event.content}
                     timestamp={event.timestamp}
                     targetAgent={getTargetAgent(event)}
+                    forceExpanded={allExpanded}
                   />
                 </motion.div>
               ))}

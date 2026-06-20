@@ -18,6 +18,7 @@ interface DebateMessageProps {
   content: string;
   timestamp: string;
   targetAgent?: AgentType;
+  forceExpanded?: boolean;
 }
 
 const borderColors: Record<string, string> = {
@@ -69,6 +70,23 @@ function parseContent(content: string): unknown | null {
   } catch {
     return null;
   }
+}
+
+/**
+ * Derive a one-line summary from parsed JSON content.
+ * Tries structured fields before falling back to a raw slice.
+ */
+export function deriveSummary(parsed: unknown, rawContent: string): string {
+  if (parsed && typeof parsed === "object") {
+    const obj = parsed as Record<string, unknown>;
+    // Try known text fields in priority order
+    if (typeof obj.summary === "string" && obj.summary.trim()) return obj.summary.trim();
+    if (typeof obj.position === "string" && obj.position.trim()) return obj.position.trim();
+    if (typeof obj.recommendation === "string" && obj.recommendation.trim()) return obj.recommendation.trim();
+    if (typeof obj.assessment === "string" && obj.assessment.trim()) return obj.assessment.trim();
+  }
+  // Fallback: raw content slice (avoid rendering raw JSON fragments when possible)
+  return rawContent.slice(0, 100);
 }
 
 function ProposalContent({ data }: { data: ProposalOutput }) {
@@ -245,8 +263,10 @@ export default function DebateMessage({
   content,
   timestamp,
   targetAgent,
+  forceExpanded,
 }: DebateMessageProps) {
-  const [expanded, setExpanded] = useState(false);
+  const [localExpanded, setLocalExpanded] = useState(false);
+  const expanded = forceExpanded !== undefined ? forceExpanded : localExpanded;
   const parsed = parseContent(content);
   const formattedTime = new Date(timestamp).toLocaleTimeString([], {
     hour: "2-digit",
@@ -259,9 +279,7 @@ export default function DebateMessage({
       : headerLabels[type];
 
   // Derive one-line summary for collapsed view
-  const summary = parsed && typeof parsed === "object" && "summary" in (parsed as Record<string, unknown>)
-    ? (parsed as { summary?: string }).summary || content.slice(0, 100)
-    : content.slice(0, 100);
+  const summary = deriveSummary(parsed, content);
 
   return (
     <div className="flex gap-3 group">
@@ -279,11 +297,11 @@ export default function DebateMessage({
           aria-expanded={expanded}
           aria-label={`${agentDisplayNames[agent]} ${headerLabel}. ${expanded ? "Click to collapse" : "Click to expand"}.`}
           className="cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/70 focus-visible:ring-offset-1 focus-visible:ring-offset-gray-950 rounded-lg"
-          onClick={() => setExpanded(!expanded)}
+          onClick={() => setLocalExpanded(!expanded)}
           onKeyDown={(e) => {
             if (e.key === "Enter" || e.key === " ") {
               e.preventDefault();
-              setExpanded(!expanded);
+              setLocalExpanded(!expanded);
             }
           }}
         >

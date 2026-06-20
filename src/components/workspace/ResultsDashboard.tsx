@@ -22,6 +22,16 @@ const agentDotColors: Record<AgentType, string> = {
   "product-engineer": "bg-violet-500",
 };
 
+/**
+ * Normalize a confidence value to a percentage integer.
+ * If confidence > 1, treat it as already a percentage (0-100 scale).
+ * Otherwise, multiply by 100 to convert from 0-1 fraction.
+ */
+export function formatConfidence(confidence: number): number {
+  if (confidence > 1) return Math.round(confidence);
+  return Math.round(confidence * 100);
+}
+
 function ConsensusMeter({
   agreements,
   disagreements,
@@ -141,8 +151,8 @@ export default function ResultsDashboard({
   // Derive headline from top recommended decision or overall confidence
   const topDecision = consensus.recommendedDecisions?.[0];
   const headline = topDecision
-    ? `Recommendation: ${topDecision.title} \u2014 confidence ${Math.round(topDecision.confidence * 100)}%`
-    : `Overall Confidence: ${Math.round((consensus.overallConfidence || 0) * 100)}%`;
+    ? `Recommendation: ${topDecision.title} \u2014 confidence ${formatConfidence(topDecision.confidence)}%`
+    : `Overall Confidence: ${formatConfidence(consensus.overallConfidence || 0)}%`;
 
   // Sort decisions by confidence descending
   const sortedDecisions = [...(consensus.recommendedDecisions || [])].sort(
@@ -189,7 +199,7 @@ export default function ResultsDashboard({
                     {decision.title}
                   </h4>
                   <span className="text-[10px] text-green-400 font-mono shrink-0">
-                    {Math.round(decision.confidence * 100)}%
+                    {formatConfidence(decision.confidence)}%
                   </span>
                 </div>
                 <p className="text-xs text-gray-400 mt-1 leading-relaxed">
