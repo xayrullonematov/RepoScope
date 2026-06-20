@@ -2,7 +2,7 @@
   "id": "FEAT-003",
   "type": "fix",
   "description": "Address review findings: (1) Add Expand All/Collapse All in DebateChat, (2) Fix fragile summary derivation in DebateMessage, (3) Show filtered-event indicator in ToolCallTrace, (4) Add confidence guard in ResultsDashboard, (5) Add unit tests for new collapse/filter/parsing logic.",
-  "status": "in_progress",
+  "status": "completed",
   "steps": [
     "1. DebateChat: Add an 'Expand All / Collapse All' toggle button that controls all DebateMessage expand states.",
     "2. DebateMessage: Fix summary derivation to try parsed.summary, parsed.position, parsed.recommendation fields before falling back to content.slice(0,100).",
@@ -26,5 +26,5 @@
     "npm run test exits with code 0 for the new test file"
   ],
   "blocked_reason": null,
-  "findings": null
+  "findings": "All 5 review issues fixed. Build and lint pass (0 errors). 24 new unit tests pass covering deriveSummary (9 tests), formatConfidence (7 tests), and parseStageProgress (8 tests). DebateMessage now accepts forceExpanded prop from parent for batch control. ToolCallTrace shows hidden event count in header and expanded panel."
 }
