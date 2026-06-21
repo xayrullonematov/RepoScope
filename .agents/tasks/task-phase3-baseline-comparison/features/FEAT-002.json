@@ -2,7 +2,7 @@
   "id": "FEAT-002",
   "type": "feat",
   "description": "Build the comparison report generator (src/lib/baseline-comparison.ts) and the runnable comparison script (scripts/run-comparison.ts). The comparison module computes: (1) primary metric - count of distinct risk/decision categories surfaced by baseline vs union across all 4 debate agents' consensus output, (2) secondary metric - token/cost overhead for full 4-agent debate vs single baseline call, (3) optional coverage check - whether the baseline clusters on 1-2 lenses vs touching all 4. The script ties it together by running both arms (or accepting pre-computed results) and producing a JSON+markdown report.",
-  "status": "pending",
+  "status": "in_progress",
   "steps": [
     "Create src/lib/baseline-comparison.ts. Define interfaces: ComparisonInput (baselineResult: BaselineResult from baseline-runner, debateConsensus: ConsensusOutput from domain.ts, debateTokenUsage: { inputTokens, outputTokens }, baselineTokenUsage: { inputTokens, outputTokens }), ComparisonReport (categories object with baseline-only, debate-only, both arrays; tokenCost object with baseline and debate totals; coverageAnalysis with per-discipline boolean flags for baseline).",
     "Implement category extraction: from ProposalOutput, extract risk categories (risk.description mapped to a normalized category string) and decision categories (from artifactSuggestions where type is 'decision' or 'recommendation', using title as category). From ConsensusOutput, extract from identifiedRisks and recommendedDecisions similarly.",
