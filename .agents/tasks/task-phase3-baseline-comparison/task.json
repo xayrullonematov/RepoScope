@@ -1,0 +1,7 @@
+{
+  "task_id": "task-phase3-baseline-comparison",
+  "task_description": "Implement Phase 3 of Movistan: Efficiency-vs-Baseline Metric. Build a single-agent baseline runner with identical tool access to debate agents, a comparison report generator that measures category overlap and token costs, and a script/test harness to produce the comparison artifact for the submission writeup.",
+  "status": "in_progress",
+  "feature_order": ["FEAT-001", "FEAT-002"],
+  "blocked_reason": null
+}
