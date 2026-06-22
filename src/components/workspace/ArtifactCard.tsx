@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 import type { ArtifactState, ArtifactType, ArtifactStatus, AgentType } from "@/types/domain";
 import ArtifactDetail from "./ArtifactDetail";
+import { toast } from "@/hooks/useToast";
 
 interface ArtifactCardProps {
   artifact: ArtifactState;
@@ -63,19 +64,36 @@ export default function ArtifactCard({ artifact, sessionId, onStatusChange }: Ar
   const [expanded, setExpanded] = useState(false);
   const [showStatusDropdown, setShowStatusDropdown] = useState(false);
   const [isUpdating, setIsUpdating] = useState(false);
+  // Optimistic local override — falls back to server-provided status on next refresh.
+  const [optimisticStatus, setOptimisticStatus] = useState<ArtifactStatus | null>(null);
 
   const Icon = typeIcons[artifact.type] || FileCheck;
+  const effectiveStatus: ArtifactStatus = optimisticStatus ?? artifact.status;
 
   const handleStatusChange = async (status: ArtifactStatus) => {
+    const previous = optimisticStatus;
+    setOptimisticStatus(status);
     setIsUpdating(true);
     setShowStatusDropdown(false);
     try {
-      await fetch(`/api/sessions/${sessionId}/artifacts/${artifact.id}`, {
+      const res = await fetch(`/api/sessions/${sessionId}/artifacts/${artifact.id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ status }),
       });
+      if (!res.ok) {
+        const body = (await res.json().catch(() => ({}))) as { error?: string };
+        throw new Error(body.error ?? `Server returned ${res.status}`);
+      }
       onStatusChange?.();
+      // Server is now the source of truth — drop the override on next render cycle.
+      setOptimisticStatus(null);
+    } catch (err) {
+      setOptimisticStatus(previous);
+      toast.error({
+        message: `Couldn't ${status === "accepted" ? "accept" : status === "rejected" ? "reject" : "update"} artifact`,
+        description: err instanceof Error ? err.message : "Network error — please try again.",
+      });
     } finally {
       setIsUpdating(false);
     }
@@ -107,8 +125,13 @@ export default function ArtifactCard({ artifact, sessionId, onStatusChange }: Ar
 
           {/* Status Badge */}
           <div className="mt-2 flex items-center gap-2">
-            <span className={`px-2 py-0.5 text-xs rounded-md border ${statusColors[artifact.status]}`}>
-              {artifact.status}
+            <span
+              className={`px-2 py-0.5 text-xs rounded-md border ${statusColors[effectiveStatus]} ${
+                optimisticStatus ? "opacity-80" : ""
+              }`}
+              title={optimisticStatus ? "Saving…" : undefined}
+            >
+              {effectiveStatus}
             </span>
             <span className="text-xs px-1.5 py-0.5 bg-gray-800 border border-gray-700 rounded text-gray-500">
               {artifact.type}
@@ -142,7 +165,7 @@ export default function ArtifactCard({ artifact, sessionId, onStatusChange }: Ar
         </div>
 
         {/* Status Change Dropdown - visible on hover for draft artifacts */}
-        {artifact.status === "draft" && (
+        {effectiveStatus === "draft" && (
           <div
             className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity"
             onClick={(e) => e.stopPropagation()}

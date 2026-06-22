@@ -3,10 +3,26 @@
 import { useState } from "react";
 import { Download, ChevronDown, ChevronUp } from "lucide-react";
 import type { SessionState, AgentType, Severity } from "@/types/domain";
+import Skeleton from "@/components/ui/Skeleton";
 
 interface ResultsDashboardProps {
   session: SessionState;
   onExport?: () => void;
+  loading?: boolean;
+}
+
+export function ResultsDashboardSkeleton() {
+  return (
+    <div className="h-full overflow-y-auto px-4 py-4 space-y-5">
+      <Skeleton className="h-10 w-full rounded-lg" />
+      <Skeleton className="h-28 w-full rounded-xl" />
+      <div className="space-y-2">
+        <Skeleton className="h-4 w-32" />
+        <Skeleton className="h-14 w-full rounded-lg" />
+        <Skeleton className="h-14 w-full rounded-lg" />
+      </div>
+    </div>
+  );
 }
 
 const severityColors: Record<Severity, string> = {
@@ -113,10 +129,15 @@ function ConsensusMeter({
 export default function ResultsDashboard({
   session,
   onExport,
+  loading = false,
 }: ResultsDashboardProps) {
   const consensus = session.consensus;
   const [showAllDecisions, setShowAllDecisions] = useState(false);
   const [showAllRisks, setShowAllRisks] = useState(false);
+
+  if (loading) {
+    return <ResultsDashboardSkeleton />;
+  }
 
   if (!consensus) {
     return (

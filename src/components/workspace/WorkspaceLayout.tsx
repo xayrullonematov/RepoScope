@@ -1,11 +1,10 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   ArrowLeft,
-  Download,
   Loader2,
   CheckCircle,
   Pause,
@@ -15,16 +14,36 @@ import {
 import type { SessionState, RoundStage, ArtifactType, ArtifactStatus } from "@/types/domain";
 import StageProgressBar from "./StageProgressBar";
 import AgentArena from "./AgentArena";
+import AgentStrip from "./AgentStrip";
 import DebateChat from "./DebateChat";
 import WorkspaceTabs from "./WorkspaceTabs";
+import MobileTabBar from "./MobileTabBar";
 import ResultsDashboard from "./ResultsDashboard";
 import TokenBudgetBar from "./TokenBudgetBar";
 import ArtifactCard from "./ArtifactCard";
 import InterventionPanel from "./InterventionPanel";
 import NotificationBanner from "@/components/ui/NotificationBanner";
+import EmptyState from "@/components/ui/EmptyState";
+import StageTransitionToast from "./StageTransitionToast";
+import RoundEtaIndicator from "./RoundEtaIndicator";
+import ClarificationPanel from "./ClarificationPanel";
+import GitHubGroundingIndicator from "./GitHubGroundingIndicator";
+import BudgetEditDialog from "./BudgetEditDialog";
+import ExportMenu, { type ExportMenuHandle } from "./ExportMenu";
+import { useEventStream } from "@/hooks/useEventStream";
+import { useKeyboardShortcuts } from "@/hooks/useKeyboardShortcuts";
+import { toast } from "@/hooks/useToast";
+import { FileText, History } from "lucide-react";
+import Link from "next/link";
+import type { SessionConfig } from "@/types/domain";
 
 interface WorkspaceLayoutProps {
-  session: SessionState;
+  session: SessionState & {
+    tokenBudget?: number | null;
+    config?: SessionConfig;
+    wasRecovered?: boolean;
+    recoveredAt?: string | null;
+  };
   mutate?: () => void;
 }
 
@@ -80,9 +99,28 @@ export default function WorkspaceLayout({ session, mutate }: WorkspaceLayoutProp
   const router = useRouter();
   const [activeTab, setActiveTab] = useState("debate");
   const [isStartingRound, setIsStartingRound] = useState(false);
-  const [isExporting, setIsExporting] = useState(false);
   const [artifactTypeFilter, setArtifactTypeFilter] = useState<ArtifactType | "all">("all");
   const [artifactStatusFilter, setArtifactStatusFilter] = useState<ArtifactStatus | "all">("accepted");
+  const [showBudgetDialog, setShowBudgetDialog] = useState(false);
+  const exportMenuRef = useRef<ExportMenuHandle>(null);
+  // Fire a one-time toast if this session was crash-recovered. Use the
+  // recoveredAt timestamp as the dedupe key so navigating back later doesn't
+  // re-fire — and so a *new* recovery does.
+  const recoveryKey = session.recoveredAt ?? null;
+  const recoveryShownRef = useRef<string | null>(null);
+  useEffect(() => {
+    if (!session.wasRecovered || !recoveryKey) return;
+    if (recoveryShownRef.current === recoveryKey) return;
+    recoveryShownRef.current = recoveryKey;
+    toast.info({
+      message: "Session recovered",
+      description: "We restored this session after an interrupted round. You can continue from where it left off.",
+    });
+  }, [session.wasRecovered, recoveryKey]);
+
+  // Subscribe to the raw event stream once at this level — children read derived
+  // selectors via props so we don't fire 5 separate SWR pollers.
+  const { events, stageTransitions, lastEventByAgent } = useEventStream(session.id);
 
   // Compute workspace state
   const isEmptyState = session.currentRound === 0 && session.artifacts.length === 0 && !session.currentStage;
@@ -92,6 +130,20 @@ export default function WorkspaceLayout({ session, mutate }: WorkspaceLayoutProp
   const completedStages = useMemo(() => getCompletedStages(session.currentStage), [session.currentStage]);
 
   const totalTokens = (session.tokenUsage.totalInputTokens || 0) + (session.tokenUsage.totalOutputTokens || 0);
+  const budgetCeiling = session.tokenBudget ?? DEFAULT_TOKEN_BUDGET;
+  const githubRepo = session.config?.githubRepo;
+
+  // Show the clarification panel only when the latest interaction is a still-
+  // unanswered clarification request. A `user-intervention` event after the
+  // clarification means the user already replied.
+  const hasPendingClarification = useMemo(() => {
+    for (let i = events.length - 1; i >= 0; i--) {
+      const e = events[i];
+      if (e.type === "user-intervention" && e.round === session.currentRound) return false;
+      if (e.type === "clarification-request" && e.round === session.currentRound) return true;
+    }
+    return false;
+  }, [events, session.currentRound]);
 
   // Filter artifacts
   const filteredArtifacts = useMemo(() => {
@@ -115,7 +167,16 @@ export default function WorkspaceLayout({ session, mutate }: WorkspaceLayoutProp
   const handleStartRound = async () => {
     setIsStartingRound(true);
     try {
-      await fetch(`/api/sessions/${session.id}/rounds`, { method: "POST" });
+      const res = await fetch(`/api/sessions/${session.id}/rounds`, { method: "POST" });
+      if (!res.ok) {
+        const body = (await res.json().catch(() => ({}))) as { error?: string };
+        toast.error({ message: "Couldn't start round", description: body.error ?? `Server returned ${res.status}` });
+      }
+    } catch (err) {
+      toast.error({
+        message: "Couldn't start round",
+        description: err instanceof Error ? err.message : "Network error",
+      });
     } finally {
       setIsStartingRound(false);
     }
@@ -130,22 +191,19 @@ export default function WorkspaceLayout({ session, mutate }: WorkspaceLayoutProp
     });
   };
 
-  const handleExport = async () => {
-    setIsExporting(true);
-    try {
-      const res = await fetch(`/api/sessions/${session.id}/export`);
-      if (res.ok) {
-        const blob = await res.blob();
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement("a");
-        a.href = url;
-        a.download = `session-${session.id}.md`;
-        a.click();
-        URL.revokeObjectURL(url);
-      }
-    } finally {
-      setIsExporting(false);
+  const handleExportFromResults = async () => {
+    const res = await fetch(`/api/sessions/${session.id}/export`);
+    if (!res.ok) {
+      toast.error({ message: "Export failed", description: `Server returned ${res.status}` });
+      return;
     }
+    const blob = await res.blob();
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `session-${session.id}.md`;
+    a.click();
+    URL.revokeObjectURL(url);
   };
 
   // Determine if start round button should be disabled
@@ -153,6 +211,15 @@ export default function WorkspaceLayout({ session, mutate }: WorkspaceLayoutProp
     isStartingRound ||
     session.status !== "active" ||
     (session.currentStage !== null && session.currentStage !== "awaiting-intervention");
+
+  // Workspace-scoped shortcuts. `?` and the `g _` chords are wired globally
+  // from the root layout / AppHeader.
+  useKeyboardShortcuts({
+    "start-round": () => {
+      if (!startRoundDisabled) handleStartRound();
+    },
+    export: () => exportMenuRef.current?.open(),
+  });
 
   return (
     <div className="min-h-screen h-screen flex flex-col bg-gray-950">
@@ -179,7 +246,7 @@ export default function WorkspaceLayout({ session, mutate }: WorkspaceLayoutProp
               <span className="hidden sm:inline">All Sessions</span>
             </button>
             <div className="w-px h-5 bg-gray-700" />
-            <h1 className="text-sm font-medium text-gray-200 truncate max-w-xs lg:max-w-md">
+            <h1 className="text-sm font-medium text-gray-200 truncate max-w-[140px] sm:max-w-xs lg:max-w-md">
               {session.problemDescription.slice(0, 80)}
               {session.problemDescription.length > 80 ? "..." : ""}
             </h1>
@@ -197,41 +264,81 @@ export default function WorkspaceLayout({ session, mutate }: WorkspaceLayoutProp
 
           {/* Right: Token mini bar + actions */}
           <div className="flex items-center gap-3">
-            <div className="hidden lg:block w-32">
+            {githubRepo && (
+              <div className="hidden md:block">
+                <GitHubGroundingIndicator repo={githubRepo} events={events} />
+              </div>
+            )}
+            <div className="hidden lg:block w-36">
               <TokenBudgetBar
                 used={totalTokens}
-                total={DEFAULT_TOKEN_BUDGET}
+                total={budgetCeiling}
                 estimatedCost={session.tokenUsage.estimatedCostUsd}
+                onEditBudget={() => setShowBudgetDialog(true)}
               />
             </div>
-            <button
-              onClick={handleExport}
-              disabled={isExporting}
-              className="flex items-center gap-1.5 px-3 py-1.5 text-xs bg-gray-800 border border-gray-700 rounded-lg text-gray-300 hover:bg-gray-700 hover:text-white transition-colors disabled:opacity-50"
-            >
-              <Download size={12} />
-              <span className="hidden sm:inline">{isExporting ? "..." : "Export"}</span>
-            </button>
+            {session.status === "completed" && (
+              <Link
+                href={`/sessions/${session.id}/replay`}
+                className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 text-xs bg-gray-800 border border-gray-700 rounded-lg text-gray-300 hover:bg-gray-700 hover:text-white transition-colors"
+                title="Replay this session"
+              >
+                <History size={12} />
+                <span>Replay</span>
+              </Link>
+            )}
+            <ExportMenu ref={exportMenuRef} sessionId={session.id} session={session} />
             <button
               onClick={handleEndSession}
               disabled={session.status === "completed"}
               className="px-3 py-1.5 text-xs bg-red-950/50 border border-red-800/50 rounded-lg text-red-400 hover:bg-red-900/50 hover:text-red-300 transition-colors disabled:opacity-50"
             >
-              End Session
+              <span className="sm:hidden">End</span>
+              <span className="hidden sm:inline">End Session</span>
             </button>
           </div>
         </div>
       </header>
 
-      {/* Stage Progress Bar */}
-      <StageProgressBar
-        currentStage={session.currentStage}
-        completedStages={completedStages}
-      />
+      {/* Live event subscriptions — toasts fire on each stage transition. */}
+      <StageTransitionToast transitions={stageTransitions} />
+
+      {/* Stage Progress Bar with optional ETA chip */}
+      <div className="relative">
+        <StageProgressBar
+          currentStage={session.currentStage}
+          completedStages={completedStages}
+        />
+        {isActiveRound && (
+          <div className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2">
+            <RoundEtaIndicator
+              events={events}
+              currentRound={session.currentRound}
+              currentStage={session.currentStage}
+            />
+          </div>
+        )}
+      </div>
+
+      {/* Mobile: GitHub grounding chip + replay link beneath the stage bar */}
+      {(githubRepo || session.status === "completed") && (
+        <div className="md:hidden border-b border-gray-800 bg-gray-950/40 px-3 py-2 flex items-center gap-2 overflow-x-auto">
+          {githubRepo && <GitHubGroundingIndicator repo={githubRepo} events={events} />}
+          {session.status === "completed" && (
+            <Link
+              href={`/sessions/${session.id}/replay`}
+              className="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs bg-gray-800 border border-gray-700 rounded-md text-gray-300 hover:bg-gray-700 hover:text-white transition-colors"
+            >
+              <History size={12} />
+              Replay
+            </Link>
+          )}
+        </div>
+      )}
 
       {/* Notification Banner for Awaiting Intervention */}
       <AnimatePresence>
-        {isAwaitingIntervention && (
+        {isAwaitingIntervention && !hasPendingClarification && (
           <div className="px-4 pt-3 shrink-0">
             <NotificationBanner
               type="warning"
@@ -243,19 +350,42 @@ export default function WorkspaceLayout({ session, mutate }: WorkspaceLayoutProp
         )}
       </AnimatePresence>
 
-      {/* Main Body: 2-column layout */}
-      <div className="flex-1 flex overflow-hidden">
-        {/* Left Column: Agent Arena (35%) */}
-        <aside className="w-[35%] border-r border-gray-800 overflow-hidden flex flex-col shrink-0">
+      {/* Budget edit dialog */}
+      <BudgetEditDialog
+        open={showBudgetDialog}
+        sessionId={session.id}
+        currentBudget={session.tokenBudget ?? null}
+        currentUsed={totalTokens}
+        onClose={() => setShowBudgetDialog(false)}
+        onSaved={() => mutate?.()}
+      />
+
+      {/* Main Body: responsive — desktop 2-col, mobile single column */}
+      <div className="flex-1 flex min-h-0 overflow-hidden">
+        {/* Left Column: Agent Arena — desktop only */}
+        <aside className="hidden md:flex md:w-[35%] lg:w-[30%] xl:w-[28%] border-r border-gray-800 overflow-hidden flex-col shrink-0">
           <AgentArena
             agents={session.agents}
             currentStage={session.currentStage}
             activeAgentId={undefined}
+            lastEventByAgent={lastEventByAgent}
           />
         </aside>
 
-        {/* Right Column: Main Content (65%) */}
-        <main className="flex-1 flex flex-col overflow-hidden">
+        {/* Right Column: Main Content */}
+        <main className="flex-1 flex flex-col min-w-0 overflow-hidden">
+          {/* Mobile-only horizontal agent strip */}
+          {!isEmptyState && (
+            <div className="md:hidden">
+              <AgentStrip
+                agents={session.agents}
+                currentStage={session.currentStage}
+                activeAgentId={undefined}
+                lastEventByAgent={lastEventByAgent}
+              />
+            </div>
+          )}
+
           {/* Empty State */}
           {isEmptyState ? (
             <div className="flex-1 flex items-center justify-center p-8">
@@ -289,15 +419,17 @@ export default function WorkspaceLayout({ session, mutate }: WorkspaceLayoutProp
             </div>
           ) : (
             <>
-              {/* Tabs */}
-              <WorkspaceTabs
-                activeTab={activeTab}
-                onTabChange={setActiveTab}
-                tabs={tabs}
-              />
+              {/* Tabs — desktop top tabs only */}
+              <div className="hidden md:block">
+                <WorkspaceTabs
+                  activeTab={activeTab}
+                  onTabChange={setActiveTab}
+                  tabs={tabs}
+                />
+              </div>
 
               {/* Tab Content */}
-              <div className="flex-1 overflow-hidden">
+              <div className="flex-1 min-h-0 overflow-hidden">
                 {activeTab === "debate" && (
                   <DebateChat
                     sessionId={session.id}
@@ -308,8 +440,18 @@ export default function WorkspaceLayout({ session, mutate }: WorkspaceLayoutProp
 
                 {activeTab === "artifacts" && (
                   <div className="h-full overflow-y-auto px-4 py-4">
+                    {/* Clarification panel takes priority when an agent is blocked on a question. */}
+                    {hasPendingClarification && (
+                      <div className="mb-4">
+                        <ClarificationPanel
+                          sessionId={session.id}
+                          events={events}
+                          currentRound={session.currentRound}
+                        />
+                      </div>
+                    )}
                     {/* Intervention Panel appears here when awaiting */}
-                    {isAwaitingIntervention && (
+                    {isAwaitingIntervention && !hasPendingClarification && (
                       <div className="mb-4">
                         <InterventionPanel sessionId={session.id} />
                       </div>
@@ -369,11 +511,11 @@ export default function WorkspaceLayout({ session, mutate }: WorkspaceLayoutProp
                         ))}
                       </div>
                     ) : (
-                      <div className="flex items-center justify-center h-48">
-                        <p className="text-sm text-gray-500">
-                          No artifacts yet. Artifacts will appear as agents produce them during debate.
-                        </p>
-                      </div>
+                      <EmptyState
+                        icon={FileText}
+                        title="No artifacts yet"
+                        description="Decisions, risks, assumptions, and tradeoffs will appear here as agents produce them."
+                      />
                     )}
                   </div>
                 )}
@@ -381,7 +523,7 @@ export default function WorkspaceLayout({ session, mutate }: WorkspaceLayoutProp
                 {activeTab === "results" && (
                   <ResultsDashboard
                     session={session}
-                    onExport={handleExport}
+                    onExport={handleExportFromResults}
                   />
                 )}
               </div>
@@ -390,8 +532,37 @@ export default function WorkspaceLayout({ session, mutate }: WorkspaceLayoutProp
         </main>
       </div>
 
-      {/* Footer */}
-      <footer className="border-t border-gray-800 px-4 py-3 shrink-0">
+      {/* Mobile bottom tab bar */}
+      {!isEmptyState && (
+        <div className="md:hidden shrink-0">
+          <MobileTabBar
+            tabs={tabs}
+            activeTab={activeTab}
+            onTabChange={setActiveTab}
+          />
+        </div>
+      )}
+
+      {/* Mobile FAB for Start Next Round (above the tab bar) */}
+      {!isEmptyState && !startRoundDisabled && (
+        <button
+          onClick={handleStartRound}
+          aria-label={isStartingRound ? "Starting round" : "Start next round"}
+          className={`md:hidden fixed right-4 bottom-[68px] z-30 inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-blue-600 to-violet-600 px-5 py-3 text-sm font-semibold text-white shadow-lg shadow-blue-500/30 transition-all hover:from-blue-500 hover:to-violet-500 ${
+            isAwaitingIntervention ? "animate-pulse" : ""
+          }`}
+        >
+          {isStartingRound ? (
+            <Loader2 size={16} className="animate-spin" />
+          ) : (
+            <Play size={16} />
+          )}
+          {isStartingRound ? "Starting" : "Start Round"}
+        </button>
+      )}
+
+      {/* Footer — desktop only */}
+      <footer className="hidden md:block border-t border-gray-800 px-4 py-3 shrink-0">
         <div className="flex items-center justify-between">
           {/* Left: Action buttons */}
           <div className="flex items-center gap-3">
@@ -442,11 +613,12 @@ export default function WorkspaceLayout({ session, mutate }: WorkspaceLayoutProp
           )}
 
           {/* Right: Token Budget */}
-          <div className="w-40 hidden md:block">
+          <div className="w-44 hidden md:block">
             <TokenBudgetBar
               used={totalTokens}
-              total={DEFAULT_TOKEN_BUDGET}
+              total={budgetCeiling}
               estimatedCost={session.tokenUsage.estimatedCostUsd}
+              onEditBudget={() => setShowBudgetDialog(true)}
             />
           </div>
         </div>

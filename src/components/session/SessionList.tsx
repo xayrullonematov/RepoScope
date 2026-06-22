@@ -1,6 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
+import Skeleton from "@/components/ui/Skeleton";
 
 interface SessionSummary {
   id: string;
@@ -13,6 +14,27 @@ interface SessionSummary {
 
 interface SessionListProps {
   sessions: SessionSummary[];
+  loading?: boolean;
+}
+
+export function SessionListSkeleton({ rows = 3 }: { rows?: number }) {
+  return (
+    <div className="space-y-3">
+      <Skeleton className="h-4 w-40" />
+      <div className="overflow-hidden rounded-xl border border-gray-700">
+        <div className="divide-y divide-gray-800">
+          {Array.from({ length: rows }).map((_, i) => (
+            <div key={i} className="flex items-center gap-3 px-4 py-3">
+              <Skeleton className="h-4 flex-1" />
+              <Skeleton className="h-4 w-16" />
+              <Skeleton className="h-4 w-10" />
+              <Skeleton className="h-4 w-12" />
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
 }
 
 function timeAgo(dateStr: string): string {
@@ -29,8 +51,12 @@ function timeAgo(dateStr: string): string {
   return `${days}d ago`;
 }
 
-export default function SessionList({ sessions }: SessionListProps) {
+export default function SessionList({ sessions, loading = false }: SessionListProps) {
   const router = useRouter();
+
+  if (loading) {
+    return <SessionListSkeleton />;
+  }
 
   if (sessions.length === 0) {
     return null;

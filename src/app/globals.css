@@ -79,6 +79,28 @@ body {
   font-family: var(--font-inter), system-ui, sans-serif;
 }
 
+/* Light theme overrides — opt-in by data-theme="light" on <html>.
+   Most of the UI still uses Tailwind gray-* utility classes that aren't
+   theme-aware yet; this only flips the CSS variable surface so the chrome
+   and any theme-aware components react. Hardcoded utility colors will be
+   migrated incrementally as components opt in. */
+html[data-theme="light"] {
+  --background: #f9fafb;
+  --foreground: #111827;
+  --card: #ffffff;
+  --card-foreground: #111827;
+  --border: #e5e7eb;
+  --muted: #f3f4f6;
+  --muted-foreground: #4b5563;
+  --accent: #2563eb;
+  --accent-foreground: #ffffff;
+  --surface: #ffffff;
+  --surface-elevated: #f3f4f6;
+  --text-primary: #0f172a;
+  --text-secondary: #475569;
+  --text-muted: #64748b;
+}
+
 /* Custom scrollbar for dark mode */
 ::-webkit-scrollbar {
   width: 8px;
@@ -186,6 +208,10 @@ body {
 @keyframes breathe {
   0%, 100% { transform: scale(1); }
   50% { transform: scale(1.02); }
+}
+
+@keyframes shimmer {
+  100% { transform: translateX(100%); }
 }
 
 /* Accessibility: respect reduced motion preference */

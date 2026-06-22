@@ -8,6 +8,7 @@
 
 import { prisma } from "@/lib/db";
 import { crashRecovery } from "@/lib/crash-recovery";
+import { eventStore } from "@/lib/event-store";
 import { sessionLock } from "@/lib/session-lock";
 import type { AgentType } from "@/types/domain";
 
@@ -40,9 +41,10 @@ export async function runStartupRecovery(): Promise<void> {
 
       // Detect incomplete round
       const incomplete = await crashRecovery.detectIncompleteRound(session.id);
+      let missingAgents: AgentType[] = [];
 
       if (incomplete) {
-        const missingAgents: AgentType[] = await crashRecovery.recoverIncompleteStage(session.id);
+        missingAgents = await crashRecovery.recoverIncompleteStage(session.id);
         console.log(
           `[RECOVERY] Session ${session.id}: Round ${incomplete.round}, Stage ${incomplete.stage}, ` +
           `Completed: [${incomplete.completedAgents.join(", ")}], ` +
@@ -53,6 +55,24 @@ export async function runStartupRecovery(): Promise<void> {
       // Force-release the stale lock so the user can retry
       await sessionLock.forceRelease(session.id);
       console.log(`[RECOVERY] Released stale lock for session: ${session.id}`);
+
+      // Leave a marker in the event log so the UI can surface "Session recovered".
+      // We reuse `stage-progress` (a system-level event type) to avoid widening
+      // the event-type union; clients filter by content.status === "recovered".
+      await eventStore.appendEvent({
+        sessionId: session.id,
+        type: "stage-progress",
+        agentId: null,
+        round: incomplete?.round ?? 0,
+        stage: incomplete?.stage ?? null,
+        content: {
+          status: "recovered",
+          round: incomplete?.round ?? 0,
+          stage: incomplete?.stage ?? null,
+          completedAgents: incomplete?.completedAgents ?? [],
+          needsReexecution: missingAgents,
+        },
+      });
     }
 
     if (staleSessions.length === 0) {

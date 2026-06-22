@@ -2,10 +2,28 @@
 
 import { useState, useRef, useEffect, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { MessageSquare } from "lucide-react";
 import type { RoundStage, PersistedEvent, AgentType } from "@/types/domain";
 import { useEventStream } from "@/hooks/useEventStream";
 import DebateMessage from "./DebateMessage";
 import ToolCallTrace from "./ToolCallTrace";
+import EmptyState from "@/components/ui/EmptyState";
+import Skeleton from "@/components/ui/Skeleton";
+import AgentStatusStream from "./AgentStatusStream";
+
+const ALL_AGENTS: AgentType[] = [
+  "senior-engineer",
+  "security-engineer",
+  "performance-engineer",
+  "product-engineer",
+];
+
+const agentLabel: Record<AgentType, string> = {
+  "senior-engineer": "Senior Engineer",
+  "security-engineer": "Security Engineer",
+  "performance-engineer": "Performance Engineer",
+  "product-engineer": "Product Engineer",
+};
 
 interface DebateChatProps {
   sessionId: string;
@@ -66,7 +84,7 @@ export default function DebateChat({
   currentStage,
 }: DebateChatProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
-  const { events, isLoading } = useEventStream(sessionId);
+  const { events, isLoading, lastEventByAgent } = useEventStream(sessionId);
   const [selectedRoundOverride, setSelectedRound] = useState<number | null>(null);
   const [allExpanded, setAllExpanded] = useState<boolean | undefined>(undefined);
   const selectedRound = selectedRoundOverride === null || selectedRoundOverride > currentRound
@@ -109,14 +127,19 @@ export default function DebateChat({
 
   if (isLoading && filteredEvents.length === 0) {
     return (
-      <div className="flex items-center justify-center h-full">
-        <div className="text-center">
-          <div className="w-6 h-6 border-2 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-3" />
-          <p className="text-sm text-gray-400">Loading debate...</p>
-        </div>
+      <div className="flex flex-col h-full p-4 space-y-3">
+        <Skeleton className="h-4 w-32" />
+        <Skeleton className="h-20 w-full rounded-lg" />
+        <Skeleton className="h-20 w-3/4 rounded-lg" />
+        <Skeleton className="h-20 w-5/6 rounded-lg" />
       </div>
     );
   }
+
+  const isLiveRound =
+    selectedRound === currentRound &&
+    currentStage !== null &&
+    currentStage !== "awaiting-intervention";
 
   if (filteredEvents.length === 0 && selectedRound === currentRound) {
     return (
@@ -130,32 +153,33 @@ export default function DebateChat({
             onRoundChange={setSelectedRound}
           />
         )}
-        <div className="flex-1 flex items-center justify-center p-8">
-          <div className="text-center max-w-sm">
-            <div className="w-12 h-12 rounded-full bg-gray-800 border border-gray-700 flex items-center justify-center mx-auto mb-4">
-              <svg
-                className="w-6 h-6 text-gray-500"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-                aria-hidden="true"
+        {isLiveRound ? (
+          <div className="flex-1 overflow-y-auto px-4 py-4 space-y-3">
+            <p className="text-[11px] uppercase tracking-wider text-gray-500">
+              Agents are working on round {selectedRound}…
+            </p>
+            {ALL_AGENTS.map((agentId) => (
+              <div
+                key={agentId}
+                className="flex items-center justify-between rounded-lg border border-gray-800 bg-gray-900/40 px-3 py-2"
               >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={1.5}
-                  d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"
+                <span className="text-sm text-gray-200">{agentLabel[agentId]}</span>
+                <AgentStatusStream
+                  agent={agentId}
+                  lastEvent={lastEventByAgent[agentId]}
+                  currentStage={currentStage}
+                  variant="full"
                 />
-              </svg>
-            </div>
-            <p className="text-gray-400 text-sm">
-              No debate messages yet for round {selectedRound}.
-            </p>
-            <p className="text-gray-500 text-xs mt-1">
-              Messages will appear here as agents contribute.
-            </p>
+              </div>
+            ))}
           </div>
-        </div>
+        ) : (
+          <EmptyState
+            icon={MessageSquare}
+            title={`No debate messages yet for round ${selectedRound}.`}
+            description="Messages appear here as agents contribute. Start a round to begin."
+          />
+        )}
       </div>
     );
   }
@@ -228,6 +252,61 @@ export default function DebateChat({
             </div>
           ))}
         </AnimatePresence>
+
+        {/* Live progress strip — shows when round is active and we don't yet have
+            messages from every agent for the current stage. */}
+        {isLiveRound && currentStage && (
+          <LiveAgentProgress
+            currentStage={currentStage}
+            currentRound={currentRound}
+            filteredEvents={filteredEvents}
+            lastEventByAgent={lastEventByAgent}
+          />
+        )}
+      </div>
+    </div>
+  );
+}
+
+/** Per-agent status row shown while a round is actively executing. */
+function LiveAgentProgress({
+  currentStage,
+  filteredEvents,
+  lastEventByAgent,
+}: {
+  currentStage: RoundStage;
+  currentRound: number;
+  filteredEvents: PersistedEvent[];
+  lastEventByAgent: Partial<Record<AgentType, PersistedEvent>>;
+}) {
+  // Agents that have already produced a structured event for this stage are "done".
+  const stageMessageTypes = new Set(["proposal", "critique", "revision", "consensus-update"]);
+  const doneAgents = new Set<AgentType>();
+  for (const event of filteredEvents) {
+    if (event.stage === currentStage && event.agentId && stageMessageTypes.has(event.type)) {
+      doneAgents.add(event.agentId);
+    }
+  }
+  const pending = ALL_AGENTS.filter((a) => !doneAgents.has(a));
+  if (pending.length === 0) return null;
+
+  return (
+    <div className="mt-2 rounded-lg border border-dashed border-gray-700 bg-gray-900/30 p-3">
+      <p className="text-[10px] uppercase tracking-wider text-gray-500 mb-2">
+        Waiting on {pending.length} {pending.length === 1 ? "agent" : "agents"}
+      </p>
+      <div className="space-y-1.5">
+        {pending.map((agentId) => (
+          <div key={agentId} className="flex items-center justify-between text-xs">
+            <span className="text-gray-300">{agentLabel[agentId]}</span>
+            <AgentStatusStream
+              agent={agentId}
+              lastEvent={lastEventByAgent[agentId]}
+              currentStage={currentStage}
+              variant="full"
+            />
+          </div>
+        ))}
       </div>
     </div>
   );
