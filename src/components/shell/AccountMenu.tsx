@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { LogOut, Settings, User } from "lucide-react";
+import { Settings, User } from "lucide-react";
 import { useCurrentUser } from "@/lib/auth/user-context";
 
 const colorMap: Record<string, string> = {
@@ -71,14 +71,6 @@ export default function AccountMenu() {
           >
             <Settings size={14} /> Settings
           </Link>
-          <button
-            role="menuitem"
-            disabled
-            title="Authentication is not enabled in this build"
-            className="mt-1 flex w-full items-center gap-2 rounded-md px-3 py-2 text-sm text-gray-500 cursor-not-allowed"
-          >
-            <LogOut size={14} /> Sign out
-          </button>
         </div>
       )}
     </div>

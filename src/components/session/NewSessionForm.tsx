@@ -63,7 +63,7 @@ export default function NewSessionForm() {
       }
 
       const data = await res.json();
-      router.push(`/sessions/${data.sessionId}`);
+      router.push(`/sessions/${data.sessionId}?start=1`);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Something went wrong");
     } finally {
@@ -85,7 +85,7 @@ export default function NewSessionForm() {
         {/* Problem Description */}
         <div>
           <label htmlFor="problem" className="block text-sm font-medium text-gray-300 mb-2">
-            What engineering problem should the agents debate?
+            What decision should the agents debate?
           </label>
           <textarea
             id="problem"
@@ -95,7 +95,7 @@ export default function NewSessionForm() {
             className="w-full h-44 px-4 py-3 bg-gray-800 border border-gray-700 rounded-xl text-gray-100 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500/50 resize-none text-base leading-relaxed"
             required
           />
-          <p className="text-xs text-gray-500 mt-2">
+          <p className="text-sm text-gray-400 mt-2">
             {problemDescription.length}/2000 &mdash; Be specific: include context, constraints, and what a good outcome looks like.
           </p>
         </div>
@@ -104,7 +104,7 @@ export default function NewSessionForm() {
         <div>
           <label htmlFor="github-repo" className="flex items-center gap-1.5 text-sm font-medium text-gray-300 mb-2">
             <GitBranch size={14} className="text-gray-400" />
-            Ground in a GitHub repo <span className="text-xs font-normal text-gray-500">(optional)</span>
+            Ground in a GitHub repo <span className="text-sm font-normal text-gray-400">(optional)</span>
           </label>
           <input
             id="github-repo"
@@ -116,8 +116,8 @@ export default function NewSessionForm() {
             autoComplete="off"
             spellCheck={false}
           />
-          <p className="text-xs text-gray-500 mt-1">
-            Agents can read files from the repo during the Proposal stage to ground their thinking in real code.
+          <p className="text-sm text-gray-400 mt-1">
+            Agents use read-only file access during the proposal stage. Repo contents are used only to ground this decision report.
           </p>
         </div>
 
@@ -126,7 +126,7 @@ export default function NewSessionForm() {
           <button
             type="button"
             onClick={() => setShowAdvanced(!showAdvanced)}
-            className="flex items-center gap-2 text-sm text-gray-400 hover:text-gray-200 transition-colors"
+            className="flex min-h-11 items-center gap-2 text-sm text-gray-300 hover:text-gray-100 transition-colors"
           >
             {showAdvanced ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
             Advanced options
@@ -148,7 +148,7 @@ export default function NewSessionForm() {
                   min="1000"
                   className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-gray-100 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500/50 text-sm"
                 />
-                <p className="text-xs text-gray-500 mt-1">
+                <p className="text-sm text-gray-400 mt-1">
                   Maximum tokens the debate can consume. Leave empty for unlimited.
                 </p>
               </div>
@@ -170,7 +170,7 @@ export default function NewSessionForm() {
                   <option value="limit-3">Limit to 3 questions per stage</option>
                   <option value="suppress">Suppress — never pause for clarifications</option>
                 </select>
-                <p className="text-xs text-gray-500 mt-1">
+                <p className="text-sm text-gray-400 mt-1">
                   Controls whether agents can ask you questions mid-round. Suppress for fully autonomous runs.
                 </p>
               </div>
@@ -185,7 +185,7 @@ export default function NewSessionForm() {
                   <button
                     type="button"
                     onClick={() => setShowPicker(true)}
-                    className="text-xs text-blue-400 transition-colors hover:text-blue-300"
+                    className="min-h-9 text-sm text-blue-300 transition-colors hover:text-blue-200"
                   >
                     Import from session…
                   </button>
@@ -220,9 +220,9 @@ export default function NewSessionForm() {
         <button
           type="submit"
           disabled={isSubmitting || !problemDescription.trim()}
-          className="w-full py-3.5 px-6 rounded-lg font-semibold text-white bg-gradient-to-r from-blue-500 to-violet-500 hover:from-blue-600 hover:to-violet-600 disabled:from-gray-700 disabled:to-gray-700 disabled:text-gray-500 transition-all duration-300 shadow-lg shadow-blue-500/20 hover:shadow-blue-500/30 disabled:shadow-none text-base"
+          className="min-h-12 w-full rounded-lg px-6 py-3.5 text-base font-semibold text-white bg-gradient-to-r from-blue-500 to-violet-500 hover:from-blue-600 hover:to-violet-600 disabled:from-gray-700 disabled:to-gray-700 disabled:text-gray-400 transition-all duration-300 shadow-lg shadow-blue-500/20 hover:shadow-blue-500/30 disabled:shadow-none"
         >
-          {isSubmitting ? "Creating Session..." : "Start Debate"}
+          {isSubmitting ? "Starting decision debate..." : "Start Debate"}
         </button>
       </form>
 

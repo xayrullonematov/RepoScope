@@ -106,13 +106,13 @@ export default function SessionsTable({ sessions, loading = false }: SessionsTab
             placeholder="Search by title or problem…"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            className="w-full rounded-md border border-gray-700 bg-gray-950/70 py-2 pl-9 pr-3 text-sm text-gray-100 placeholder:text-gray-500 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+            className="min-h-11 w-full rounded-md border border-gray-700 bg-gray-950/70 py-2 pl-9 pr-3 text-sm text-gray-100 placeholder:text-gray-400 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
           />
         </div>
         <select
           value={statusFilter}
           onChange={(e) => setStatusFilter(e.target.value as StatusFilter)}
-          className="rounded-md border border-gray-700 bg-gray-950/70 px-3 py-2 text-sm text-gray-100 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+          className="min-h-11 rounded-md border border-gray-700 bg-gray-950/70 px-3 py-2 text-sm text-gray-100 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
         >
           <option value="all">All status</option>
           <option value="active">Active</option>
@@ -132,10 +132,16 @@ export default function SessionsTable({ sessions, loading = false }: SessionsTab
           }
         />
       ) : (
-        <div className="overflow-hidden rounded-xl border border-gray-800">
+        <>
+        <div className="space-y-3 sm:hidden">
+          {filtered.map((session) => (
+            <SessionCard key={session.id} session={session} />
+          ))}
+        </div>
+        <div className="hidden overflow-hidden rounded-xl border border-gray-800 sm:block">
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-gray-800 bg-gray-900/50 text-left text-[11px] uppercase tracking-wider text-gray-500">
+              <tr className="border-b border-gray-800 bg-gray-900/50 text-left text-xs uppercase tracking-wide text-gray-400">
                 <th className="px-4 py-2.5">
                   <button
                     type="button"
@@ -197,12 +203,38 @@ export default function SessionsTable({ sessions, loading = false }: SessionsTab
             </tbody>
           </table>
         </div>
+        </>
       )}
 
-      <p className="text-[11px] text-gray-500">
+      <p className="text-sm text-gray-400">
         Showing {filtered.length} of {sessions.length} session{sessions.length === 1 ? "" : "s"}.
       </p>
     </div>
+  );
+}
+
+function SessionCard({ session }: { session: SessionSummary }) {
+  const title = (session.title ?? session.problemDescription ?? "Untitled").slice(0, 120);
+  return (
+    <Link
+      href={`/sessions/${session.id}`}
+      className="block rounded-xl border border-gray-800 bg-gray-900/50 p-4 transition-colors hover:border-gray-700 hover:bg-gray-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/70"
+    >
+      <div className="flex items-start justify-between gap-3">
+        <h2 className="text-sm font-medium leading-snug text-gray-100">{title}</h2>
+        <StatusPill status={session.status} />
+      </div>
+      <div className="mt-4 grid grid-cols-2 gap-3 text-sm">
+        <div>
+          <p className="text-xs font-semibold uppercase tracking-wide text-gray-400">Round</p>
+          <p className="mt-1 text-gray-100">{session.currentRound}</p>
+        </div>
+        <div>
+          <p className="text-xs font-semibold uppercase tracking-wide text-gray-400">Created</p>
+          <p className="mt-1 text-gray-100">{timeAgo(session.createdAt)}</p>
+        </div>
+      </div>
+    </Link>
   );
 }
 

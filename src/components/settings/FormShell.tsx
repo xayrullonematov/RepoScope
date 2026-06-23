@@ -31,7 +31,7 @@ export default function FormShell({
       {(title || description) && (
         <div className="space-y-1">
           {title && <h3 className="text-sm font-semibold text-gray-100">{title}</h3>}
-          {description && <p className="text-xs text-gray-400">{description}</p>}
+          {description && <p className="text-sm text-gray-300">{description}</p>}
         </div>
       )}
 
@@ -51,7 +51,7 @@ export default function FormShell({
         <button
           type="submit"
           disabled={saving || disabled}
-          className="inline-flex items-center gap-2 rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-blue-500 disabled:cursor-not-allowed disabled:opacity-50"
+          className="inline-flex min-h-11 items-center gap-2 rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-blue-500 disabled:cursor-not-allowed disabled:opacity-50"
         >
           {saving && <Loader2 size={14} className="animate-spin" />}
           {saving ? "Saving…" : saveLabel}
@@ -72,16 +72,16 @@ interface FieldProps {
 export function Field({ label, htmlFor, hint, error, children }: FieldProps) {
   return (
     <div className="space-y-1.5">
-      <label htmlFor={htmlFor} className="block text-xs font-medium text-gray-200">
+      <label htmlFor={htmlFor} className="block text-sm font-medium text-gray-200">
         {label}
       </label>
       {children}
-      {hint && !error && <p className="text-[11px] text-gray-500">{hint}</p>}
-      {error && <p className="text-[11px] text-red-300">{error}</p>}
+      {hint && !error && <p className="text-sm text-gray-400">{hint}</p>}
+      {error && <p className="text-sm text-red-300">{error}</p>}
     </div>
   );
 }
 
 export function inputClass(extra = ""): string {
-  return `w-full rounded-md border border-gray-700 bg-gray-950/60 px-3 py-2 text-sm text-gray-100 placeholder:text-gray-600 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 ${extra}`;
+  return `w-full rounded-md border border-gray-700 bg-gray-950/60 px-3 py-2 text-sm text-gray-100 placeholder:text-gray-400 min-h-11 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 ${extra}`;
 }

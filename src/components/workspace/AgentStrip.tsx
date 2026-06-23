@@ -36,7 +36,7 @@ export default function AgentStrip({
               role="tab"
               type="button"
               onClick={() => setSelectedIdx(i)}
-              className="flex shrink-0 items-center gap-2 rounded-full border border-gray-700 bg-gray-800/60 px-3 py-1.5 text-xs text-gray-200 transition-colors hover:bg-gray-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/70"
+              className="flex shrink-0 items-center gap-2 rounded-full border border-gray-700 bg-gray-800/60 px-3 py-2 text-xs min-h-11 text-gray-200 transition-colors hover:bg-gray-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/70"
             >
               <span
                 className="h-2 w-2 rounded-full"

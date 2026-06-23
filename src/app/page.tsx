@@ -2,6 +2,7 @@
 
 import { motion } from "framer-motion";
 import useSWR from "swr";
+import SampleReport from "@/components/landing/SampleReport";
 import HeroSection from "@/components/landing/HeroSection";
 import HowItWorks from "@/components/landing/HowItWorks";
 import AgentShowcase from "@/components/landing/AgentShowcase";
@@ -28,6 +29,11 @@ export default function Home() {
         <HeroSection />
       </motion.div>
 
+      {/* Sample Report */}
+      <motion.div {...fadeInUp}>
+        <SampleReport />
+      </motion.div>
+
       {/* How It Works */}
       <motion.div {...fadeInUp}>
         <HowItWorks />
@@ -43,10 +49,11 @@ export default function Home() {
         <section id="form" className="py-24 px-6">
           <div className="max-w-2xl mx-auto">
             <h2 className="text-3xl font-bold text-gray-50 text-center mb-4">
-              Start a Debate
+              Start a Decision Debate
             </h2>
-            <p className="text-gray-400 text-center mb-10">
-              Describe your engineering problem and let the agents find the best solution.
+            <p className="text-gray-300 text-center mb-10">
+              Describe the decision, tradeoff, or risk review you need. The first
+              round starts as soon as the workspace opens.
             </p>
             <div className="p-6 md:p-8 rounded-xl bg-gray-900 border border-gray-700">
               <NewSessionForm />

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, useEffect, useRef } from "react";
+import { useState, useMemo, useEffect, useRef, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -95,14 +95,101 @@ function SessionStatusBadge({ status }: { status: "active" | "paused" | "complet
   );
 }
 
+function WorkspaceSummaryBar({
+  session,
+  isActiveRound,
+  isAwaitingIntervention,
+  startRoundDisabled,
+  isStartingRound,
+  onStartRound,
+}: {
+  session: WorkspaceLayoutProps["session"];
+  isActiveRound: boolean;
+  isAwaitingIntervention: boolean;
+  startRoundDisabled: boolean;
+  isStartingRound: boolean;
+  onStartRound: () => void;
+}) {
+  const topDecision = session.consensus?.recommendedDecisions?.[0];
+  const acceptedCount = session.artifacts.filter((a) => a.status === "accepted").length;
+  const draftCount = session.artifacts.filter((a) => a.status === "draft").length;
+  const riskCount = session.artifacts.filter((a) => a.type === "risk").length;
+  const stageLabel = session.currentStage
+    ? session.currentStage === "awaiting-intervention"
+      ? "Review needed"
+      : session.currentStage.charAt(0).toUpperCase() + session.currentStage.slice(1)
+    : session.currentRound === 0
+      ? "Ready to start"
+      : "Between rounds";
+  const statusText = isActiveRound
+    ? `Round ${session.currentRound}: ${stageLabel} in progress`
+    : isAwaitingIntervention
+      ? `Round ${session.currentRound} complete: review outputs`
+      : session.status === "completed"
+        ? "Session completed"
+        : session.currentRound === 0
+          ? "Ready for first round"
+          : `Round ${session.currentRound} complete`;
+  const outputsText = topDecision
+    ? topDecision.title
+    : session.artifacts.length > 0
+      ? `${acceptedCount} accepted, ${draftCount} draft, ${riskCount} risks`
+      : "Decision report will appear after consensus";
+  const nextAction = isActiveRound
+    ? "Agents are preparing the next report update."
+    : isAwaitingIntervention
+      ? "Review artifacts, add constraints, then start the next round."
+      : session.status === "completed"
+        ? "Export the report or replay the discussion."
+        : session.currentRound === 0
+          ? "Start round one to generate the first decision report."
+          : "Start another round to refine the recommendation.";
+
+  return (
+    <section className="border-b border-gray-800 bg-gray-950/70 px-4 py-3">
+      <div className="grid gap-3 lg:grid-cols-[0.9fr_1.2fr_1fr]">
+        <div className="rounded-lg border border-gray-800 bg-gray-900/45 p-3">
+          <p className="text-xs font-semibold uppercase tracking-wide text-gray-400">Current status</p>
+          <p className="mt-1 text-sm font-medium text-gray-100">{statusText}</p>
+        </div>
+        <div className="rounded-lg border border-gray-800 bg-gray-900/45 p-3">
+          <p className="text-xs font-semibold uppercase tracking-wide text-gray-400">Key output</p>
+          <p className="mt-1 line-clamp-2 text-sm font-medium text-gray-100">{outputsText}</p>
+        </div>
+        <div className="rounded-lg border border-gray-800 bg-gray-900/45 p-3">
+          <div className="flex items-start justify-between gap-3">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-wide text-gray-400">Next action</p>
+              <p className="mt-1 text-sm text-gray-200">{nextAction}</p>
+            </div>
+            {!startRoundDisabled && (
+              <button
+                onClick={onStartRound}
+                className="inline-flex min-h-10 shrink-0 items-center gap-1.5 rounded-md bg-blue-600 px-3 text-sm font-medium text-white transition-colors hover:bg-blue-500 disabled:opacity-60"
+                disabled={isStartingRound}
+              >
+                {isStartingRound ? <Loader2 size={14} className="animate-spin" /> : <Play size={14} />}
+                Start
+              </button>
+            )}
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
 export default function WorkspaceLayout({ session, mutate }: WorkspaceLayoutProps) {
   const router = useRouter();
-  const [activeTab, setActiveTab] = useState("debate");
+  const [activeTab, setActiveTab] = useState(() =>
+    session.consensus ? "results" : session.artifacts.length > 0 ? "artifacts" : "debate"
+  );
   const [isStartingRound, setIsStartingRound] = useState(false);
   const [artifactTypeFilter, setArtifactTypeFilter] = useState<ArtifactType | "all">("all");
-  const [artifactStatusFilter, setArtifactStatusFilter] = useState<ArtifactStatus | "all">("accepted");
+  const [artifactStatusFilter, setArtifactStatusFilter] = useState<ArtifactStatus | "all">("all");
   const [showBudgetDialog, setShowBudgetDialog] = useState(false);
   const exportMenuRef = useRef<ExportMenuHandle>(null);
+  const autoStartAttemptedRef = useRef(false);
   // Fire a one-time toast if this session was crash-recovered. Use the
   // recoveredAt timestamp as the dedupe key so navigating back later doesn't
   // re-fire — and so a *new* recovery does.
@@ -145,6 +232,7 @@ export default function WorkspaceLayout({ session, mutate }: WorkspaceLayoutProp
     return false;
   }, [events, session.currentRound]);
 
+
   // Filter artifacts
   const filteredArtifacts = useMemo(() => {
     const filtered = session.artifacts.filter((a) => {
@@ -157,21 +245,30 @@ export default function WorkspaceLayout({ session, mutate }: WorkspaceLayoutProp
     return filtered.sort((a, b) => statusOrder[a.status] - statusOrder[b.status]);
   }, [session.artifacts, artifactTypeFilter, artifactStatusFilter]);
 
+  const artifactStatusCounts = useMemo(() => ({
+    all: session.artifacts.length,
+    accepted: session.artifacts.filter((a) => a.status === "accepted").length,
+    draft: session.artifacts.filter((a) => a.status === "draft").length,
+    rejected: session.artifacts.filter((a) => a.status === "rejected").length,
+  }), [session.artifacts]);
+
   // Tab configuration
   const tabs = useMemo(() => [
-    { id: "debate", label: "Debate" },
+    { id: "results", label: "Report" },
     { id: "artifacts", label: "Artifacts", badge: session.artifacts.length || undefined },
-    { id: "results", label: "Results" },
+    { id: "debate", label: "Debate" },
   ], [session.artifacts.length]);
 
-  const handleStartRound = async () => {
+  const handleStartRound = useCallback(async () => {
     setIsStartingRound(true);
     try {
       const res = await fetch(`/api/sessions/${session.id}/rounds`, { method: "POST" });
       if (!res.ok) {
         const body = (await res.json().catch(() => ({}))) as { error?: string };
         toast.error({ message: "Couldn't start round", description: body.error ?? `Server returned ${res.status}` });
+        return;
       }
+      mutate?.();
     } catch (err) {
       toast.error({
         message: "Couldn't start round",
@@ -180,7 +277,7 @@ export default function WorkspaceLayout({ session, mutate }: WorkspaceLayoutProp
     } finally {
       setIsStartingRound(false);
     }
-  };
+  }, [mutate, session.id]);
 
   const handleEndSession = async () => {
     if (!window.confirm("End this session? This cannot be undone.")) return;
@@ -212,6 +309,14 @@ export default function WorkspaceLayout({ session, mutate }: WorkspaceLayoutProp
     session.status !== "active" ||
     (session.currentStage !== null && session.currentStage !== "awaiting-intervention");
 
+  useEffect(() => {
+    const autoStartRequested = new URLSearchParams(window.location.search).get("start") === "1";
+    if (!autoStartRequested || autoStartAttemptedRef.current || !isEmptyState || startRoundDisabled) return;
+    autoStartAttemptedRef.current = true;
+    router.replace(`/sessions/${session.id}`, { scroll: false });
+    void handleStartRound();
+  }, [handleStartRound, isEmptyState, router, session.id, startRoundDisabled]);
+
   // Workspace-scoped shortcuts. `?` and the `g _` chords are wired globally
   // from the root layout / AppHeader.
   useKeyboardShortcuts({
@@ -239,8 +344,8 @@ export default function WorkspaceLayout({ session, mutate }: WorkspaceLayoutProp
           {/* Left: Breadcrumb + Title */}
           <div className="flex items-center gap-3 min-w-0">
             <button
-              onClick={() => router.push("/")}
-              className="flex items-center gap-1 text-gray-400 hover:text-gray-200 text-sm shrink-0 transition-colors"
+              onClick={() => router.push("/sessions")}
+              className="flex min-h-10 items-center gap-1 text-gray-300 hover:text-gray-100 text-sm shrink-0 transition-colors"
             >
               <ArrowLeft size={14} />
               <span className="hidden sm:inline">All Sessions</span>
@@ -291,7 +396,7 @@ export default function WorkspaceLayout({ session, mutate }: WorkspaceLayoutProp
             <button
               onClick={handleEndSession}
               disabled={session.status === "completed"}
-              className="px-3 py-1.5 text-xs bg-red-950/50 border border-red-800/50 rounded-lg text-red-400 hover:bg-red-900/50 hover:text-red-300 transition-colors disabled:opacity-50"
+              className="min-h-10 px-3 py-1.5 text-sm bg-red-950/50 border border-red-800/50 rounded-lg text-red-400 hover:bg-red-900/50 hover:text-red-300 transition-colors disabled:opacity-50"
             >
               <span className="sm:hidden">End</span>
               <span className="hidden sm:inline">End Session</span>
@@ -308,6 +413,7 @@ export default function WorkspaceLayout({ session, mutate }: WorkspaceLayoutProp
         <StageProgressBar
           currentStage={session.currentStage}
           completedStages={completedStages}
+          currentRound={session.currentRound}
         />
         {isActiveRound && (
           <div className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2">
@@ -363,7 +469,7 @@ export default function WorkspaceLayout({ session, mutate }: WorkspaceLayoutProp
       {/* Main Body: responsive — desktop 2-col, mobile single column */}
       <div className="flex-1 flex min-h-0 overflow-hidden">
         {/* Left Column: Agent Arena — desktop only */}
-        <aside className="hidden md:flex md:w-[35%] lg:w-[30%] xl:w-[28%] border-r border-gray-800 overflow-hidden flex-col shrink-0">
+        <aside className="hidden md:flex md:w-72 lg:w-80 xl:w-[22rem] border-r border-gray-800 overflow-hidden flex-col shrink-0">
           <AgentArena
             agents={session.agents}
             currentStage={session.currentStage}
@@ -404,8 +510,8 @@ export default function WorkspaceLayout({ session, mutate }: WorkspaceLayoutProp
                 <p className="text-sm text-gray-400 mb-2 leading-relaxed">
                   {session.problemDescription}
                 </p>
-                <p className="text-xs text-gray-500 mb-6">
-                  Click &quot;Start First Round&quot; to begin the structured debate. Each round goes through 4 stages: Proposal, Critique, Revision, and Consensus.
+                <p className="text-sm text-gray-400 mb-6">
+                  Round one starts the first decision report. Agents move through proposal, critique, revision, and consensus.
                 </p>
                 <button
                   onClick={handleStartRound}
@@ -419,6 +525,15 @@ export default function WorkspaceLayout({ session, mutate }: WorkspaceLayoutProp
             </div>
           ) : (
             <>
+              <WorkspaceSummaryBar
+                session={session}
+                isActiveRound={isActiveRound}
+                isAwaitingIntervention={isAwaitingIntervention}
+                startRoundDisabled={startRoundDisabled}
+                isStartingRound={isStartingRound}
+                onStartRound={handleStartRound}
+              />
+
               {/* Tabs — desktop top tabs only */}
               <div className="hidden md:block">
                 <WorkspaceTabs
@@ -458,11 +573,11 @@ export default function WorkspaceLayout({ session, mutate }: WorkspaceLayoutProp
                     )}
 
                     {/* Filter Bar */}
-                    <div className="flex items-center gap-2 mb-4">
+                    <div className="mb-4 flex flex-wrap items-center gap-2">
                       <select
                         value={artifactTypeFilter}
                         onChange={(e) => setArtifactTypeFilter(e.target.value as ArtifactType | "all")}
-                        className="px-2.5 py-1.5 text-xs bg-gray-800 border border-gray-700 rounded-lg text-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500/50"
+                        className="min-h-10 px-3 py-2 text-sm bg-gray-800 border border-gray-700 rounded-lg text-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500/50"
                       >
                         <option value="all">All Types</option>
                         <option value="decision">Decision</option>
@@ -475,12 +590,12 @@ export default function WorkspaceLayout({ session, mutate }: WorkspaceLayoutProp
                       <select
                         value={artifactStatusFilter}
                         onChange={(e) => setArtifactStatusFilter(e.target.value as ArtifactStatus | "all")}
-                        className="px-2.5 py-1.5 text-xs bg-gray-800 border border-gray-700 rounded-lg text-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500/50"
+                        className="min-h-10 px-3 py-2 text-sm bg-gray-800 border border-gray-700 rounded-lg text-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500/50"
                       >
-                        <option value="all">All Status</option>
-                        <option value="draft">Draft</option>
-                        <option value="accepted">Accepted</option>
-                        <option value="rejected">Rejected</option>
+                        <option value="all">All Status ({artifactStatusCounts.all})</option>
+                        <option value="accepted">Accepted ({artifactStatusCounts.accepted})</option>
+                        <option value="draft">Draft ({artifactStatusCounts.draft})</option>
+                        <option value="rejected">Rejected ({artifactStatusCounts.rejected})</option>
                       </select>
                       {(artifactTypeFilter !== "all" || artifactStatusFilter !== "all") && (
                         <button
@@ -488,12 +603,12 @@ export default function WorkspaceLayout({ session, mutate }: WorkspaceLayoutProp
                             setArtifactTypeFilter("all");
                             setArtifactStatusFilter("all");
                           }}
-                          className="px-2.5 py-1.5 text-xs bg-blue-900/40 border border-blue-700/50 rounded-lg text-blue-300 hover:bg-blue-900/60 hover:text-blue-200 transition-colors"
+                          className="min-h-10 px-3 py-2 text-sm bg-blue-900/40 border border-blue-700/50 rounded-lg text-blue-200 hover:bg-blue-900/60 hover:text-blue-100 transition-colors"
                         >
                           Show All
                         </button>
                       )}
-                      <span className="ml-auto text-xs text-gray-500">
+                      <span className="ml-auto text-sm text-gray-400">
                         {filteredArtifacts.length} artifact{filteredArtifacts.length !== 1 ? "s" : ""}
                       </span>
                     </div>

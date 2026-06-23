@@ -38,6 +38,19 @@ const agentDotColors: Record<AgentType, string> = {
   "product-engineer": "bg-violet-500",
 };
 
+const agentLabels: Record<AgentType, string> = {
+  "senior-engineer": "Senior Engineer",
+  "security-engineer": "Security Engineer",
+  "performance-engineer": "Performance Engineer",
+  "product-engineer": "Product Engineer",
+};
+
+const severityLabels: Record<Severity, string> = {
+  high: "High risk",
+  medium: "Medium risk",
+  low: "Low risk",
+};
+
 /**
  * Normalize a confidence value to a percentage integer.
  * If confidence > 1, treat it as already a percentage (0-100 scale).
@@ -158,11 +171,11 @@ export default function ResultsDashboard({
               />
             </svg>
           </div>
-          <p className="text-gray-400 text-sm">
-            No results yet.
+          <p className="text-gray-200 text-base font-medium">
+            No decision report yet.
           </p>
-          <p className="text-gray-500 text-xs mt-1">
-            Results will appear after the first round reaches consensus.
+          <p className="text-gray-400 text-sm mt-2">
+            The report appears after agents reach consensus: recommendations, risks, open questions, and next steps.
           </p>
         </div>
       </div>
@@ -192,6 +205,11 @@ export default function ResultsDashboard({
 
   return (
     <div className="h-full overflow-y-auto px-4 py-4 space-y-5">
+      <header>
+        <h2 className="text-xl font-semibold text-gray-50">Decision Report</h2>
+        <p className="mt-1 text-sm text-gray-300">Recommendations, risks, and unresolved questions from the latest consensus.</p>
+      </header>
+
       {/* Headline / TL;DR */}
       <div className="rounded-lg bg-blue-500/5 border border-blue-600/30 px-4 py-3">
         <p className="text-sm font-medium text-blue-300">{headline}</p>
@@ -219,11 +237,11 @@ export default function ResultsDashboard({
                   <h4 className="text-sm font-medium text-green-300">
                     {decision.title}
                   </h4>
-                  <span className="text-[10px] text-green-400 font-mono shrink-0">
+                  <span className="text-sm text-green-300 font-mono shrink-0">
                     {formatConfidence(decision.confidence)}%
                   </span>
                 </div>
-                <p className="text-xs text-gray-400 mt-1 leading-relaxed">
+                <p className="text-sm text-gray-300 mt-2 leading-relaxed">
                   {decision.description}
                 </p>
               </div>
@@ -232,7 +250,7 @@ export default function ResultsDashboard({
           {hasMoreDecisions && (
             <button
               onClick={() => setShowAllDecisions(!showAllDecisions)}
-              className="mt-2 flex items-center gap-1 text-xs text-blue-400 hover:text-blue-300 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/70 rounded"
+              className="mt-2 flex min-h-10 items-center gap-1 text-sm text-blue-300 hover:text-blue-300 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/70 rounded"
               aria-expanded={showAllDecisions}
             >
               {showAllDecisions ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
@@ -248,17 +266,32 @@ export default function ResultsDashboard({
           <h3 className="text-sm font-medium text-gray-300 mb-3">
             Risk Register
           </h3>
-          <div className="rounded-lg border border-gray-700 overflow-hidden">
-            <table className="w-full text-xs">
+          <div className="space-y-3 sm:hidden">
+            {cappedRisks.map((risk, i) => (
+              <div key={i} className="rounded-lg border border-gray-700 bg-gray-900/45 p-3">
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className={`rounded-md border px-2 py-1 text-sm font-medium ${severityColors[risk.severity]}`}>
+                    {severityLabels[risk.severity]}
+                  </span>
+                  <span className="text-sm text-gray-400">
+                    Raised by {risk.raisedBy.map((agentId) => agentLabels[agentId]).join(", ")}
+                  </span>
+                </div>
+                <p className="mt-3 text-sm leading-relaxed text-gray-200">{risk.description}</p>
+              </div>
+            ))}
+          </div>
+          <div className="hidden rounded-lg border border-gray-700 overflow-hidden sm:block">
+            <table className="w-full text-sm">
               <thead>
                 <tr className="bg-gray-800/50">
-                  <th className="text-left px-3 py-2 text-gray-400 font-medium">
+                  <th className="text-left px-3 py-2 text-gray-300 font-medium">
                     Risk
                   </th>
-                  <th className="text-left px-3 py-2 text-gray-400 font-medium w-20">
+                  <th className="text-left px-3 py-2 text-gray-300 font-medium w-28">
                     Severity
                   </th>
-                  <th className="text-left px-3 py-2 text-gray-400 font-medium w-24">
+                  <th className="text-left px-3 py-2 text-gray-300 font-medium w-28">
                     Raised By
                   </th>
                 </tr>
@@ -266,14 +299,14 @@ export default function ResultsDashboard({
               <tbody className="divide-y divide-gray-700/50">
                 {cappedRisks.map((risk, i) => (
                   <tr key={i} className="hover:bg-gray-800/30">
-                    <td className="px-3 py-2 text-gray-300">
+                    <td className="px-3 py-2 text-gray-200">
                       {risk.description}
                     </td>
                     <td className="px-3 py-2">
                       <span
                         className={`px-1.5 py-0.5 rounded text-[10px] font-medium border ${severityColors[risk.severity]}`}
                       >
-                        {risk.severity}
+                        {severityLabels[risk.severity]}
                       </span>
                     </td>
                     <td className="px-3 py-2">
@@ -295,7 +328,7 @@ export default function ResultsDashboard({
           {hasMoreRisks && (
             <button
               onClick={() => setShowAllRisks(!showAllRisks)}
-              className="mt-2 flex items-center gap-1 text-xs text-blue-400 hover:text-blue-300 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/70 rounded"
+              className="mt-2 flex min-h-10 items-center gap-1 text-sm text-blue-300 hover:text-blue-300 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/70 rounded"
               aria-expanded={showAllRisks}
             >
               {showAllRisks ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
@@ -315,7 +348,7 @@ export default function ResultsDashboard({
             {consensus.openQuestions.map((question, i) => (
               <li
                 key={i}
-                className="flex items-start gap-2 text-xs text-gray-400 bg-gray-800/40 rounded-lg px-3 py-2 border border-gray-700/50"
+                className="flex items-start gap-2 text-sm text-gray-300 bg-gray-800/40 rounded-lg px-3 py-2 border border-gray-700/50"
               >
                 <span className="text-cyan-400 shrink-0 mt-0.5">?</span>
                 <span>{question}</span>
@@ -330,10 +363,10 @@ export default function ResultsDashboard({
         <div className="pt-3 border-t border-gray-700">
           <button
             onClick={onExport}
-            className="flex items-center gap-2 px-4 py-2.5 rounded-lg bg-gray-800 border border-gray-700 text-sm text-gray-300 hover:bg-gray-700 hover:text-white transition-colors w-full justify-center"
+            className="flex min-h-11 items-center gap-2 px-4 py-2.5 rounded-lg bg-gray-800 border border-gray-700 text-sm text-gray-200 hover:bg-gray-700 hover:text-white transition-colors w-full justify-center"
           >
             <Download size={16} />
-            <span>Export Results as Markdown</span>
+            <span>Export Report as Markdown</span>
           </button>
         </div>
       )}

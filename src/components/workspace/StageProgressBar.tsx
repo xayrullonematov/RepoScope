@@ -12,6 +12,7 @@ import type { RoundStage } from "@/types/domain";
 interface StageProgressBarProps {
   currentStage: RoundStage | null;
   completedStages: RoundStage[];
+  currentRound?: number;
 }
 
 const stages: {
@@ -28,6 +29,7 @@ const stages: {
 export default function StageProgressBar({
   currentStage,
   completedStages,
+  currentRound = 0,
 }: StageProgressBarProps) {
   const showIntervention = currentStage === "awaiting-intervention";
 
@@ -39,9 +41,32 @@ export default function StageProgressBar({
     return "pending";
   };
 
+  const currentLabel = currentStage
+    ? currentStage === "awaiting-intervention"
+      ? `Round ${currentRound}: review needed`
+      : `Round ${currentRound}: ${currentStage} in progress`
+    : currentRound === 0
+      ? "Ready to start first round"
+      : `Round ${currentRound}: waiting for next action`;
+
   return (
     <div className="w-full px-4 py-3 bg-gray-900 border-b border-gray-700">
-      <div className="flex items-center gap-1">
+      <div className="flex items-center justify-between gap-3 sm:hidden">
+        <div className="flex min-w-0 items-center gap-2">
+          {showIntervention ? (
+            <Hand size={17} className="shrink-0 text-yellow-300" />
+          ) : currentStage ? (
+            <RefreshCw size={17} className="shrink-0 text-blue-300" />
+          ) : (
+            <MessageSquare size={17} className="shrink-0 text-gray-300" />
+          )}
+          <span className="truncate text-sm font-medium text-gray-100">{currentLabel}</span>
+        </div>
+        <span className="shrink-0 text-sm text-gray-400">
+          {completedStages.length}/4 done
+        </span>
+      </div>
+      <div className="hidden items-center gap-1 sm:flex">
         {stages.map((stage, idx) => {
           const state = getSegmentState(stage.id);
           const Icon = stage.icon;

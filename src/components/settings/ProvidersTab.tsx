@@ -165,6 +165,13 @@ function ProvidersForm({ initial, update }: ProvidersFormProps) {
           autoComplete="off"
         />
       </Field>
+
+      <div className="rounded-lg border border-gray-700 bg-gray-950/50 px-4 py-3">
+        <h4 className="text-sm font-semibold text-gray-100">Trust and privacy</h4>
+        <p className="mt-1 text-sm leading-relaxed text-gray-300">
+          Provider settings are stored server-side for this workspace. API keys stay in environment variables, and GitHub grounding uses read-only repo access scoped to the repository you enter for a session.
+        </p>
+      </div>
     </FormShell>
   );
 }

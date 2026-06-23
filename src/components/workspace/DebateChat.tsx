@@ -87,6 +87,7 @@ export default function DebateChat({
   const { events, isLoading, lastEventByAgent } = useEventStream(sessionId);
   const [selectedRoundOverride, setSelectedRound] = useState<number | null>(null);
   const [allExpanded, setAllExpanded] = useState<boolean | undefined>(undefined);
+  const [showDeveloperDetails, setShowDeveloperDetails] = useState(false);
   const selectedRound = selectedRoundOverride === null || selectedRoundOverride > currentRound
     ? currentRound
     : selectedRoundOverride;
@@ -155,7 +156,7 @@ export default function DebateChat({
         )}
         {isLiveRound ? (
           <div className="flex-1 overflow-y-auto px-4 py-4 space-y-3">
-            <p className="text-[11px] uppercase tracking-wider text-gray-500">
+            <p className="text-sm font-medium uppercase tracking-wide text-gray-400">
               Agents are working on round {selectedRound}…
             </p>
             {ALL_AGENTS.map((agentId) => (
@@ -198,20 +199,29 @@ export default function DebateChat({
 
       {/* Expand All / Collapse All toggle */}
       {filteredEvents.length > 0 && (
-        <div className="flex items-center px-4 py-1.5 border-b border-gray-800 shrink-0">
+        <div className="flex flex-wrap items-center gap-3 px-4 py-2 border-b border-gray-800 shrink-0">
           <button
             onClick={() => setAllExpanded(allExpanded === true ? false : true)}
-            className="text-xs text-blue-400 hover:text-blue-300 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/70 rounded px-1.5 py-0.5"
+            className="min-h-9 rounded px-2 text-sm text-blue-300 transition-colors hover:text-blue-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/70"
             aria-label={allExpanded === true ? "Collapse all messages" : "Expand all messages"}
           >
             {allExpanded === true ? "Collapse All" : "Expand All"}
+          </button>
+          <button
+            onClick={() => setShowDeveloperDetails((value) => !value)}
+            className="min-h-9 rounded px-2 text-sm text-gray-300 transition-colors hover:text-gray-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/70"
+            aria-pressed={showDeveloperDetails}
+          >
+            {showDeveloperDetails ? "Hide developer details" : "Developer details"}
           </button>
         </div>
       )}
 
       <div ref={scrollRef} className="flex-1 overflow-y-auto px-4 py-4 space-y-4">
-        {/* Tool Call Trace - shows tool usage from stage-progress events */}
-        <ToolCallTrace events={events} currentStage={currentStage} />
+        {/* Tool Call Trace - opt-in developer detail from stage-progress events */}
+        {showDeveloperDetails && (
+          <ToolCallTrace events={events} currentStage={currentStage} />
+        )}
 
         <AnimatePresence mode="popLayout">
           {groupedEvents.map((group, groupIdx) => (
@@ -220,7 +230,7 @@ export default function DebateChat({
               {groupIdx > 0 && (
                 <div className="flex items-center gap-3 py-3">
                   <div className="flex-1 h-px bg-gray-700" />
-                  <span className="text-[10px] uppercase font-medium text-gray-500 tracking-wider">
+                  <span className="text-xs uppercase font-medium text-gray-400 tracking-wide">
                     {stageLabels[group.stage] || group.stage}
                   </span>
                   <div className="flex-1 h-px bg-gray-700" />
@@ -292,12 +302,12 @@ function LiveAgentProgress({
 
   return (
     <div className="mt-2 rounded-lg border border-dashed border-gray-700 bg-gray-900/30 p-3">
-      <p className="text-[10px] uppercase tracking-wider text-gray-500 mb-2">
+      <p className="text-xs uppercase tracking-wide text-gray-400 mb-2">
         Waiting on {pending.length} {pending.length === 1 ? "agent" : "agents"}
       </p>
       <div className="space-y-1.5">
         {pending.map((agentId) => (
-          <div key={agentId} className="flex items-center justify-between text-xs">
+          <div key={agentId} className="flex items-center justify-between text-sm">
             <span className="text-gray-300">{agentLabel[agentId]}</span>
             <AgentStatusStream
               agent={agentId}
@@ -326,14 +336,14 @@ function RoundSelector({
 }) {
   return (
     <div className="flex items-center gap-2 px-4 py-2 border-b border-gray-800 shrink-0">
-      <label htmlFor="round-selector" className="text-xs text-gray-500">
+      <label htmlFor="round-selector" className="text-sm text-gray-400">
         Viewing:
       </label>
       <select
         id="round-selector"
         value={selectedRound}
         onChange={(e) => onRoundChange(Number(e.target.value))}
-        className="px-2.5 py-1 text-xs bg-gray-800 border border-gray-700 rounded-md text-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500/50"
+        className="min-h-10 px-3 py-2 text-sm bg-gray-800 border border-gray-700 rounded-md text-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500/50"
       >
         {availableRounds.map((round) => (
           <option key={round} value={round}>
@@ -344,7 +354,7 @@ function RoundSelector({
       {selectedRound !== currentRound && (
         <button
           onClick={() => onRoundChange(currentRound)}
-          className="text-xs text-blue-400 hover:text-blue-300 transition-colors ml-1"
+          className="min-h-10 text-sm text-blue-300 hover:text-blue-200 transition-colors ml-1"
         >
           Back to current
         </button>
