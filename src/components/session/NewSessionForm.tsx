@@ -52,18 +52,27 @@ const reviewTypes: { id: string; label: string; problem: string }[] = [
   },
 ];
 
-export default function NewSessionForm() {
+interface NewSessionFormProps {
+  githubRepo?: string;
+  onGithubRepoChange?: (value: string) => void;
+}
+
+export default function NewSessionForm({ githubRepo: controlledRepo, onGithubRepoChange }: NewSessionFormProps) {
   const router = useRouter();
   const [problemDescription, setProblemDescription] = useState("");
   const [tokenBudget, setTokenBudget] = useState<string>("");
   const [constraints, setConstraints] = useState<ConstraintItem[]>([]);
-  const [githubRepo, setGithubRepo] = useState("");
+  const [internalRepo, setInternalRepo] = useState("");
   const [priorSessionSummary, setPriorSessionSummary] = useState("");
   const [clarificationPolicy, setClarificationPolicy] = useState<ClarificationPolicy>("allow");
   const [showAdvanced, setShowAdvanced] = useState(false);
   const [showPicker, setShowPicker] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Support both controlled (from page) and uncontrolled usage
+  const githubRepo = controlledRepo ?? internalRepo;
+  const setGithubRepo = onGithubRepoChange ?? setInternalRepo;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -175,7 +184,7 @@ export default function NewSessionForm() {
           </button>
 
           {showAdvanced && (
-            <div className="mt-3 space-y-4 rounded-xl border border-[var(--border)] bg-[var(--surface-elevated)]/50 p-3 sm:mt-4 sm:space-y-5 sm:p-4">
+            <div className="mt-3 space-y-4 rounded-xl border border-[var(--border)] bg-[var(--surface-elevated)] p-3 sm:mt-4 sm:space-y-5 sm:p-4">
               {/* Token Budget */}
               <div>
                 <label htmlFor="budget" className="block text-sm font-medium text-gray-300 mb-1">

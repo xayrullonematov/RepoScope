@@ -2,7 +2,11 @@
 
 import { useState } from "react";
 
-export default function HeroSection() {
+interface HeroSectionProps {
+  onRepoSubmit?: (repo: string) => void;
+}
+
+export default function HeroSection({ onRepoSubmit }: HeroSectionProps) {
   const [repoInput, setRepoInput] = useState("");
 
   const scrollToForm = () => {
@@ -11,6 +15,9 @@ export default function HeroSection() {
 
   const handleHeroSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    if (onRepoSubmit) {
+      onRepoSubmit(repoInput);
+    }
     scrollToForm();
   };
 

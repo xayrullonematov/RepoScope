@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { motion } from "framer-motion";
 import useSWR from "swr";
 import SampleReport from "@/components/landing/SampleReport";
@@ -21,12 +22,17 @@ const fadeInUp = {
 export default function Home() {
   const { data, isLoading } = useSWR("/api/sessions", fetcher);
   const sessions = data?.sessions ?? [];
+  const [githubRepo, setGithubRepo] = useState("");
+
+  const handleHeroRepoSubmit = (repo: string) => {
+    setGithubRepo(repo);
+  };
 
   return (
     <div className="min-h-screen">
       {/* Hero Section */}
       <motion.div {...fadeInUp}>
-        <HeroSection />
+        <HeroSection onRepoSubmit={handleHeroRepoSubmit} />
       </motion.div>
 
       {/* Sample Report */}
@@ -55,7 +61,7 @@ export default function Home() {
               Paste a repo, pick what to check, get results.
             </p>
             <div className="rounded-lg border border-[var(--border)] bg-[var(--surface)] p-4 sm:p-6 md:p-8">
-              <NewSessionForm />
+              <NewSessionForm githubRepo={githubRepo} onGithubRepoChange={setGithubRepo} />
             </div>
           </div>
         </section>

@@ -20,7 +20,7 @@ const sampleSteps = [
 
 export default function SampleReport() {
   return (
-    <section className="px-4 py-10 sm:px-6 sm:py-16">
+    <section id="sample-report" className="px-4 py-10 sm:px-6 sm:py-16">
       <div className="mx-auto grid max-w-6xl gap-5 sm:gap-8 lg:grid-cols-[0.85fr_1.15fr] lg:items-center">
         <div className="space-y-3 sm:space-y-4">
           <div className="inline-flex min-h-9 items-center gap-2 rounded-full border border-emerald-500/40 bg-emerald-500/10 px-3 text-sm font-medium text-emerald-200">
