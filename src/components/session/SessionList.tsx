@@ -66,7 +66,7 @@ export default function SessionList({ sessions, loading = false }: SessionListPr
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <h3 className="text-sm font-medium text-gray-400">
-          Continue a session
+          Recent reviews
         </h3>
         <button
           onClick={() => router.push("/sessions")}

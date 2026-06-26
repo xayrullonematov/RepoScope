@@ -23,7 +23,7 @@ export default function NotFound() {
             href="/sessions"
             className="rounded-lg border border-gray-700 px-5 py-2.5 text-sm font-medium text-gray-200 transition-colors hover:border-gray-600 hover:bg-white/5"
           >
-            View sessions
+            View reviews
           </Link>
         </div>
       </div>

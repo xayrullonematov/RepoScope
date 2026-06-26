@@ -74,7 +74,7 @@ export default function PriorSessionPicker({ onClose, onPick }: PriorSessionPick
         <header className="flex items-center justify-between border-b border-gray-800 px-5 py-3">
           <div className="flex items-center gap-2">
             <FileText size={16} className="text-blue-400" />
-            <h2 className="text-sm font-semibold text-gray-100">Import a prior session</h2>
+            <h2 className="text-sm font-semibold text-gray-100">Import a prior review</h2>
           </div>
           <button
             type="button"
@@ -103,11 +103,11 @@ export default function PriorSessionPicker({ onClose, onPick }: PriorSessionPick
           {isLoading ? (
             <div className="flex items-center justify-center px-5 py-8 text-sm text-gray-500">
               <Loader2 size={14} className="mr-2 animate-spin" />
-              Loading sessions…
+              Loading reviews…
             </div>
           ) : filtered.length === 0 ? (
             <p className="px-5 py-8 text-center text-sm text-gray-500">
-              {query ? "No sessions match that search." : "No prior sessions yet."}
+              {query ? "No reviews match that search." : "No prior reviews yet."}
             </p>
           ) : (
             <ul className="divide-y divide-gray-800">
@@ -121,7 +121,7 @@ export default function PriorSessionPicker({ onClose, onPick }: PriorSessionPick
                   >
                     <div className="min-w-0 flex-1">
                       <p className="truncate text-sm text-gray-100">
-                        {session.title || "Untitled session"}
+                        {session.title || "Untitled review"}
                       </p>
                       <p className="mt-0.5 text-xs text-gray-500">
                         Round {session.currentRound} · {session.status} · {timeAgo(session.createdAt)}

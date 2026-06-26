@@ -124,11 +124,11 @@ export default function SessionsTable({ sessions, loading = false }: SessionsTab
       {filtered.length === 0 ? (
         <EmptyState
           icon={FileText}
-          title={query || statusFilter !== "all" ? "No sessions match" : "No sessions yet"}
+          title={query || statusFilter !== "all" ? "No reviews match" : "No reviews yet"}
           description={
             query || statusFilter !== "all"
               ? "Try a different search or status filter."
-              : "Start a debate from the home page to see it here."
+              : "Start a review from the home page to see it here."
           }
         />
       ) : (
@@ -207,7 +207,7 @@ export default function SessionsTable({ sessions, loading = false }: SessionsTab
       )}
 
       <p className="text-sm text-gray-400">
-        Showing {filtered.length} of {sessions.length} session{sessions.length === 1 ? "" : "s"}.
+        Showing {filtered.length} of {sessions.length} review{sessions.length === 1 ? "" : "s"}.
       </p>
     </div>
   );

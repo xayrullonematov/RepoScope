@@ -50,7 +50,7 @@ export default function AppHeader() {
           </span>
         </Link>
         <nav className="flex items-center gap-1">
-          {navLink("/sessions", "Sessions")}
+          {navLink("/sessions", "Reviews")}
           {navLink("/settings", "Settings")}
         </nav>
         <div className="flex items-center gap-1">

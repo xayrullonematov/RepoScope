@@ -231,21 +231,21 @@ export default function NewSessionForm({ githubRepo: controlledRepo, onGithubRep
                 <div className="flex items-center justify-between mb-1">
                   <label htmlFor="prior-session" className="flex items-center gap-1.5 text-sm font-medium text-gray-300">
                     <BookOpen size={14} className="text-[var(--text-muted)]" />
-                    Prior session context
+                    Prior review context
                   </label>
                   <button
                     type="button"
                     onClick={() => setShowPicker(true)}
                     className="min-h-9 text-sm text-violet-400 transition-colors hover:text-violet-300"
                   >
-                    Import from session...
+                    Import from review...
                   </button>
                 </div>
                 <textarea
                   id="prior-session"
                   value={priorSessionSummary}
                   onChange={(e) => setPriorSessionSummary(e.target.value)}
-                  placeholder="Paste or import a prior session summary so agents continue from where you left off."
+                  placeholder="Paste or import a prior review summary so agents continue from where you left off."
                   className="h-24 w-full resize-none rounded-lg border border-[var(--border)] bg-[var(--surface-elevated)] px-3 py-2 text-sm leading-relaxed text-[var(--text-primary)] placeholder-[var(--text-muted)] focus:border-[var(--brand-violet)] focus:outline-none focus:ring-2 focus:ring-[var(--violet-glow)] sm:h-28"
                 />
               </div>

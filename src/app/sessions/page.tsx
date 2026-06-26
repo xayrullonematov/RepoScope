@@ -30,9 +30,9 @@ export default function MySessionsPage() {
     <main className="mx-auto max-w-5xl px-4 py-10 sm:px-6">
       <div className="mb-6 flex items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight text-gray-50">My sessions</h1>
+          <h1 className="text-2xl font-semibold tracking-tight text-gray-50">My reviews</h1>
           <p className="mt-1 text-sm text-gray-400">
-            Every debate you&apos;ve started. Click one to jump back in.
+            Your repo reviews. Click one to jump back in.
           </p>
         </div>
         <Link
@@ -40,7 +40,7 @@ export default function MySessionsPage() {
           className="inline-flex items-center gap-1.5 rounded-lg bg-emerald-500 px-3.5 py-2 text-sm font-medium text-gray-950 transition-colors hover:bg-emerald-400"
         >
           <Plus size={14} />
-          New session
+          New review
         </Link>
       </div>
 
