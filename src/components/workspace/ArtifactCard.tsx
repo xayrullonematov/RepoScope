@@ -20,6 +20,10 @@ interface ArtifactCardProps {
   onStatusChange?: () => void;
 }
 
+// ---------------------------------------------------------------------------
+// Visual mapping helpers
+// ---------------------------------------------------------------------------
+
 const typeIcons: Record<ArtifactType, typeof FileCheck> = {
   decision: FileCheck,
   risk: AlertTriangle,
@@ -29,24 +33,6 @@ const typeIcons: Record<ArtifactType, typeof FileCheck> = {
   recommendation: ThumbsUp,
 };
 
-const typeBorderColors: Record<ArtifactType, string> = {
-  decision: "border-l-green-500",
-  risk: "border-l-red-500",
-  assumption: "border-l-amber-500",
-  tradeoff: "border-l-violet-500",
-  "open-question": "border-l-cyan-500",
-  recommendation: "border-l-blue-500",
-};
-
-const typeIconColors: Record<ArtifactType, string> = {
-  decision: "text-green-400",
-  risk: "text-red-400",
-  assumption: "text-amber-400",
-  tradeoff: "text-violet-400",
-  "open-question": "text-cyan-400",
-  recommendation: "text-blue-400",
-};
-
 const typeLabels: Record<ArtifactType, string> = {
   decision: "Finding",
   risk: "Risk",
@@ -54,6 +40,52 @@ const typeLabels: Record<ArtifactType, string> = {
   tradeoff: "Tradeoff",
   "open-question": "Question",
   recommendation: "Fix",
+};
+
+/**
+ * Severity is derived from artifact type since the ArtifactState schema
+ * does not carry an explicit severity field.
+ * - risk -> high
+ * - decision, recommendation -> medium
+ * - assumption, tradeoff, open-question -> low
+ */
+type SeverityLevel = "high" | "medium" | "low";
+
+function getSeverity(type: ArtifactType): SeverityLevel {
+  switch (type) {
+    case "risk":
+      return "high";
+    case "decision":
+    case "recommendation":
+      return "medium";
+    default:
+      return "low";
+  }
+}
+
+const severityLabels: Record<SeverityLevel, string> = {
+  high: "HIGH",
+  medium: "MEDIUM",
+  low: "LOW",
+};
+
+// Severity-driven colors for the badge / left border
+const severityBorderColors: Record<SeverityLevel, string> = {
+  high: "border-l-red-500",
+  medium: "border-l-amber-500",
+  low: "border-l-emerald-500",
+};
+
+const severityBadgeBg: Record<SeverityLevel, string> = {
+  high: "bg-red-500/15 text-red-400",
+  medium: "bg-amber-500/15 text-amber-400",
+  low: "bg-emerald-500/15 text-emerald-400",
+};
+
+const severityIconColor: Record<SeverityLevel, string> = {
+  high: "text-red-400",
+  medium: "text-amber-400",
+  low: "text-emerald-400",
 };
 
 const statusTextColors: Record<ArtifactStatus, string> = {
@@ -75,13 +107,17 @@ const agentLabels: Record<AgentType, string> = {
   "product-engineer": "Product",
 };
 
+// ---------------------------------------------------------------------------
+// Component
+// ---------------------------------------------------------------------------
+
 export default function ArtifactCard({ artifact, sessionId, onStatusChange }: ArtifactCardProps) {
   const [expanded, setExpanded] = useState(false);
   const [showStatusDropdown, setShowStatusDropdown] = useState(false);
   const [isUpdating, setIsUpdating] = useState(false);
-  // Optimistic local override — falls back to server-provided status on next refresh.
   const [optimisticStatus, setOptimisticStatus] = useState<ArtifactStatus | null>(null);
 
+  const severity = getSeverity(artifact.type);
   const Icon = typeIcons[artifact.type] || FileCheck;
   const effectiveStatus: ArtifactStatus = optimisticStatus ?? artifact.status;
 
@@ -101,7 +137,6 @@ export default function ArtifactCard({ artifact, sessionId, onStatusChange }: Ar
         throw new Error(body.error ?? "Failed to update finding. Please try again.");
       }
       onStatusChange?.();
-      // Server is now the source of truth — drop the override on next render cycle.
       setOptimisticStatus(null);
     } catch (err) {
       setOptimisticStatus(previous);
@@ -121,57 +156,62 @@ export default function ArtifactCard({ artifact, sessionId, onStatusChange }: Ar
           group relative rounded-lg border border-l-4 border-gray-700 bg-gray-900/50
           hover:-translate-y-px hover:shadow-lg hover:shadow-black/20
           transition-all duration-200 cursor-pointer
-          ${typeBorderColors[artifact.type]}
+          ${severityBorderColors[severity]}
         `}
         onClick={() => setExpanded(true)}
       >
         <div className="p-3 sm:p-4">
-          {/* Header: Icon + Title */}
-          <div className="flex items-start gap-2 pr-11 sm:gap-3 sm:pr-12">
-            <div className={`shrink-0 mt-0.5 ${typeIconColors[artifact.type]}`}>
-              <Icon size={18} className="sm:h-5 sm:w-5" />
-            </div>
-            <div className="flex-1 min-w-0">
-              <h3 className="text-sm font-medium text-gray-100 line-clamp-2 leading-snug">
-                {artifact.title}
-              </h3>
-              <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-xs text-gray-400 sm:text-sm">
-                <span
-                  className={`font-medium ${statusTextColors[effectiveStatus]} ${
-                    optimisticStatus ? "opacity-80" : ""
-                  }`}
-                  title={optimisticStatus ? "Saving..." : undefined}
-                >
-                  {statusLabels[effectiveStatus]}
-                </span>
-                <span aria-hidden="true" className="text-gray-600">/</span>
-                <span>{typeLabels[artifact.type]}</span>
-                {artifact.version > 1 && (
-                  <>
-                    <span aria-hidden="true" className="text-gray-600">/</span>
-                    <span className="font-mono">v{artifact.version}</span>
-                  </>
-                )}
-              </div>
-            </div>
+          {/* Row 1: Severity badge + Type label */}
+          <div className="flex items-center gap-2 pr-11 sm:pr-12">
+            <span
+              className={`inline-flex items-center gap-1.5 rounded px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide font-mono ${severityBadgeBg[severity]}`}
+            >
+              <Icon size={12} className={severityIconColor[severity]} />
+              {severityLabels[severity]}
+            </span>
+            <span className="text-xs text-gray-400 font-medium uppercase tracking-wide">
+              {typeLabels[artifact.type]}
+            </span>
           </div>
 
-          {/* Content Preview */}
+          {/* Row 2: Title (primary scan target) */}
+          <h3 className="mt-2 text-sm font-medium text-gray-100 line-clamp-2 leading-snug">
+            {artifact.title || <span className="italic text-gray-500">Untitled finding</span>}
+          </h3>
+
+          {/* Row 3: Content preview (what is wrong / why it matters) */}
           {artifact.content && (
-            <p className="mt-2 line-clamp-1 text-sm leading-relaxed text-gray-300 sm:mt-3 sm:line-clamp-2">
+            <p className="mt-1.5 line-clamp-2 text-xs leading-relaxed text-gray-400 sm:text-sm sm:line-clamp-2">
               {artifact.content}
             </p>
           )}
 
-          {/* Meta: Contributors */}
-          {artifact.contributors.length > 0 && (
-            <p className="mt-2 truncate text-xs text-gray-500 sm:mt-3 sm:text-sm">
-              Contributors: {artifact.contributors.map((contributor) => agentLabels[contributor] ?? contributor).join(", ")}
-            </p>
-          )}
+          {/* Row 4: Status + Agent attribution (de-emphasized) */}
+          <div className="mt-2.5 flex items-center gap-x-3 text-xs text-gray-500">
+            <span
+              className={`font-medium ${statusTextColors[effectiveStatus]} ${
+                optimisticStatus ? "opacity-80" : ""
+              }`}
+              title={optimisticStatus ? "Saving..." : undefined}
+            >
+              {statusLabels[effectiveStatus]}
+            </span>
+
+            {artifact.version > 1 && (
+              <span className="font-mono text-gray-600">v{artifact.version}</span>
+            )}
+
+            {artifact.contributors.length > 0 && (
+              <span className="ml-auto truncate text-gray-600">
+                {artifact.contributors
+                  .map((c) => agentLabels[c] ?? c)
+                  .join(", ")}
+              </span>
+            )}
+          </div>
         </div>
 
-        {/* Status Change Dropdown - always visible for draft artifacts */}
+        {/* Status Change Dropdown - secondary, always visible for draft */}
         {effectiveStatus === "draft" && (
           <div
             className="absolute right-2 top-2"
@@ -180,7 +220,7 @@ export default function ArtifactCard({ artifact, sessionId, onStatusChange }: Ar
             <button
               onClick={() => setShowStatusDropdown(!showStatusDropdown)}
               disabled={isUpdating}
-              className="flex min-h-10 min-w-10 items-center justify-center rounded-lg bg-gray-800 border border-gray-600 text-gray-200 transition-colors hover:bg-gray-700 disabled:opacity-60 sm:min-h-11 sm:min-w-11"
+              className="flex min-h-9 min-w-9 items-center justify-center rounded-md bg-gray-800/80 border border-gray-700 text-gray-400 transition-colors hover:bg-gray-700 hover:text-gray-200 disabled:opacity-60 sm:min-h-10 sm:min-w-10"
               aria-label="Change finding status"
             >
               <ChevronDown size={14} />

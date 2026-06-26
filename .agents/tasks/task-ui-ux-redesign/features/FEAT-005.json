@@ -1,0 +1,33 @@
+{
+  "id": "FEAT-005",
+  "type": "feat",
+  "description": "Finding Card UX Layer 1: Redesign ArtifactCard and ArtifactDetail to prioritize finding hierarchy (severity/type, title, content, status, agent attribution last).",
+  "status": "in_progress",
+  "steps": [
+    "1. Redesign ArtifactCard.tsx with finding-first hierarchy: severity/type badge at top, title prominent, content preview, status secondary, agent attribution last.",
+    "2. Add severity visual treatment based on artifact type: risk=high (red), decision/recommendation=medium (amber), assumption/tradeoff/open-question=low (green/calm).",
+    "3. Update type labels to match: decision=Finding, risk=Risk, assumption=Assumption, tradeoff=Tradeoff, open-question=Question, recommendation=Fix.",
+    "4. Make status control secondary (smaller, right-aligned, does not dominate).",
+    "5. Reduce agent attribution visual weight.",
+    "6. Redesign ArtifactDetail.tsx to match new hierarchy: title first, type/severity/status metadata, main content, optional reasoning/agent attribution, status control at bottom.",
+    "7. Handle missing/empty data gracefully without fake placeholders.",
+    "8. Preserve keyboard accessibility, mobile layout, aria labels."
+  ],
+  "acceptance_criteria": [
+    "ArtifactCard shows severity/type badge prominently at top of card",
+    "Card hierarchy is: severity+type -> title -> content preview -> status -> agent attribution",
+    "Severity visual treatment: risk type gets red/high treatment, decision/recommendation get amber/medium, others get calm/low",
+    "Status dropdown still works with aria-label 'Change finding status'",
+    "Agent attribution is present but visually de-emphasized",
+    "ArtifactDetail shows title first, metadata second, content third, attribution and version last",
+    "Missing title/content handled gracefully (no fake placeholders)",
+    "npm run build passes",
+    "npm run lint passes"
+  ],
+  "verification": [
+    "npm run build exits with code 0",
+    "npm run lint exits with code 0"
+  ],
+  "blocked_reason": null,
+  "findings": null
+}
