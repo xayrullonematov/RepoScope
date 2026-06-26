@@ -1,7 +1,17 @@
 "use client";
 
 import { useState } from "react";
-import { Download, ChevronDown, ChevronUp } from "lucide-react";
+import {
+  Download,
+  ChevronDown,
+  ChevronUp,
+  AlertTriangle,
+  CheckCircle2,
+  XCircle,
+  HelpCircle,
+  Lightbulb,
+  ShieldAlert,
+} from "lucide-react";
 import type { SessionState, AgentType, Severity } from "@/types/domain";
 import Skeleton from "@/components/ui/Skeleton";
 
@@ -13,13 +23,20 @@ interface ResultsDashboardProps {
 
 export function ResultsDashboardSkeleton() {
   return (
-    <div className="h-full overflow-y-auto px-3 py-3 space-y-3 sm:px-4 sm:py-4 sm:space-y-5">
-      <Skeleton className="h-10 w-full rounded-lg" />
-      <Skeleton className="h-28 w-full rounded-xl" />
+    <div className="h-full overflow-y-auto px-4 py-5 space-y-5 sm:px-6 sm:py-6 sm:space-y-6">
+      {/* Header skeleton */}
+      <div className="space-y-3">
+        <Skeleton className="h-7 w-48 rounded" />
+        <Skeleton className="h-4 w-72 rounded" />
+      </div>
+      {/* Summary card skeleton */}
+      <Skeleton className="h-32 w-full rounded-xl" />
+      {/* Findings skeleton */}
       <div className="space-y-2">
-        <Skeleton className="h-4 w-32" />
-        <Skeleton className="h-14 w-full rounded-lg" />
-        <Skeleton className="h-14 w-full rounded-lg" />
+        <Skeleton className="h-5 w-36 rounded" />
+        <Skeleton className="h-16 w-full rounded-lg" />
+        <Skeleton className="h-16 w-full rounded-lg" />
+        <Skeleton className="h-16 w-full rounded-lg" />
       </div>
     </div>
   );
@@ -54,99 +71,79 @@ export function formatConfidence(confidence: number): number {
   return Math.round(confidence * 100);
 }
 
-function ConsensusMeter({
-  agreements,
-  disagreements,
-}: {
-  agreements: number;
-  disagreements: number;
-}) {
-  const total = agreements + disagreements;
-  const percentage = total > 0 ? Math.round((agreements / total) * 100) : 0;
+/** Derive a short verdict label from the overall confidence score. */
+function deriveVerdict(score: number): { label: string; color: string; icon: typeof CheckCircle2 } {
+  if (score >= 80) return { label: "Ready to ship", color: "text-green-400", icon: CheckCircle2 };
+  if (score >= 60) return { label: "Fix before shipping", color: "text-amber-400", icon: AlertTriangle };
+  return { label: "Needs significant work", color: "text-red-400", icon: XCircle };
+}
 
-  const getColor = (pct: number): string => {
-    if (pct >= 75) return "text-green-400";
-    if (pct >= 50) return "text-amber-400";
+/** Derive a one-line summary from the consensus data. */
+function deriveSummary(
+  agreements: { point: string }[],
+  risks: { description: string; severity: Severity }[],
+  decisions: { title: string }[]
+): string {
+  const highRisks = risks.filter((r) => r.severity === "high");
+  if (highRisks.length > 0) {
+    return `${highRisks.length} critical risk${highRisks.length > 1 ? "s" : ""} found. Top risk: ${highRisks[0].description.slice(0, 100)}`;
+  }
+  if (decisions.length > 0) {
+    return `${decisions.length} recommendation${decisions.length > 1 ? "s" : ""} identified across the codebase.`;
+  }
+  if (agreements.length > 0) {
+    return `${agreements.length} point${agreements.length > 1 ? "s" : ""} of agent agreement reached.`;
+  }
+  return "Analysis complete. Review findings below.";
+}
+
+function ScoreRing({ score, size = 64 }: { score: number; size?: number }) {
+  const radius = (size - 8) / 2;
+  const circumference = 2 * Math.PI * radius;
+  const offset = circumference - (score / 100) * circumference;
+
+  const getColor = (s: number) => {
+    if (s >= 80) return "#22C55E";
+    if (s >= 60) return "#F59E0B";
+    return "#EF4444";
+  };
+
+  const getTextColor = (s: number) => {
+    if (s >= 80) return "text-green-400";
+    if (s >= 60) return "text-amber-400";
     return "text-red-400";
   };
 
-  const getBarColor = (pct: number): string => {
-    if (pct >= 75) return "bg-green-500";
-    if (pct >= 50) return "bg-amber-500";
-    return "bg-red-500";
-  };
-
   return (
-    <>
-      <div className="rounded-lg border border-gray-700 bg-gray-800/50 px-3 py-2 sm:hidden">
-        <div className="flex items-center justify-between gap-3">
-          <span className="text-sm font-medium text-gray-300">Agent Agreement</span>
-          <span className={`text-sm font-bold ${getColor(percentage)}`}>{percentage}%</span>
-        </div>
-        <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-gray-700">
-          <div
-            className={`h-full rounded-full transition-all duration-500 ${getBarColor(percentage)}`}
-            style={{ width: `${percentage}%` }}
-          />
-        </div>
-        <div className="mt-1.5 flex items-center justify-between text-xs text-gray-400">
-          <span>{agreements} agreements</span>
-          <span>{disagreements} disagreements</span>
-        </div>
+    <div className="relative" style={{ width: size, height: size }}>
+      <svg viewBox={`0 0 ${size} ${size}`} className="w-full h-full -rotate-90">
+        <circle
+          cx={size / 2}
+          cy={size / 2}
+          r={radius}
+          fill="none"
+          stroke="#1F2937"
+          strokeWidth="5"
+        />
+        <circle
+          cx={size / 2}
+          cy={size / 2}
+          r={radius}
+          fill="none"
+          stroke={getColor(score)}
+          strokeWidth="5"
+          strokeDasharray={`${circumference}`}
+          strokeDashoffset={offset}
+          strokeLinecap="round"
+          className="transition-all duration-700"
+        />
+      </svg>
+      <div className="absolute inset-0 flex items-center justify-center">
+        <span className={`text-sm font-bold font-mono ${getTextColor(score)}`}>
+          {score}
+        </span>
       </div>
-
-      <div className="hidden rounded-xl border border-gray-700 bg-gray-800/50 p-4 sm:block">
-        <h3 className="text-sm font-medium text-gray-300 mb-3">
-          Agreement Level
-        </h3>
-        <div className="flex items-center gap-4">
-          <div className="relative w-20 h-20">
-            <svg viewBox="0 0 80 80" className="w-full h-full -rotate-90">
-              <circle
-                cx="40"
-                cy="40"
-                r="34"
-                fill="none"
-                stroke="#374151"
-                strokeWidth="6"
-              />
-              <circle
-                cx="40"
-                cy="40"
-                r="34"
-                fill="none"
-                stroke={percentage >= 75 ? "#22c55e" : percentage >= 50 ? "#f59e0b" : "#ef4444"}
-                strokeWidth="6"
-                strokeDasharray={`${(percentage / 100) * 213.6} 213.6`}
-                strokeLinecap="round"
-                className="transition-all duration-700"
-              />
-            </svg>
-            <div className="absolute inset-0 flex items-center justify-center">
-              <span className={`text-lg font-bold ${getColor(percentage)}`}>
-                {percentage}%
-              </span>
-            </div>
-          </div>
-          <div className="flex-1 space-y-2">
-            <div className="flex items-center justify-between text-xs">
-              <span className="text-gray-400">Agreement</span>
-              <span className="text-green-400 font-mono">{agreements}</span>
-            </div>
-            <div className="h-1.5 rounded-full bg-gray-700 overflow-hidden">
-              <div
-                className={`h-full rounded-full transition-all duration-500 ${getBarColor(percentage)}`}
-                style={{ width: `${percentage}%` }}
-              />
-            </div>
-            <div className="flex items-center justify-between text-xs">
-              <span className="text-gray-400">Disagreement</span>
-              <span className="text-red-400 font-mono">{disagreements}</span>
-            </div>
-          </div>
-        </div>
-      </div>
-    </>
+    </div>
   );
 }
 
@@ -158,6 +155,7 @@ export default function ResultsDashboard({
   const consensus = session.consensus;
   const [showAllDecisions, setShowAllDecisions] = useState(false);
   const [showAllRisks, setShowAllRisks] = useState(false);
+  const [showAllAgreements, setShowAllAgreements] = useState(false);
 
   if (loading) {
     return <ResultsDashboardSkeleton />;
@@ -165,25 +163,38 @@ export default function ResultsDashboard({
 
   if (!consensus) {
     const hasArtifacts = session.artifacts.length > 0;
-    const acceptedArtifacts = session.artifacts.filter(a => a.status === "accepted");
-    const draftArtifacts = session.artifacts.filter(a => a.status === "draft");
+    const acceptedArtifacts = session.artifacts.filter(
+      (a) => a.status === "accepted"
+    );
+    const draftArtifacts = session.artifacts.filter(
+      (a) => a.status === "draft"
+    );
 
     return (
-      <div className="h-full overflow-y-auto px-3 py-3 space-y-4 sm:px-4 sm:py-4 sm:space-y-5">
-        {/* Problem statement — always visible */}
+      <div className="h-full overflow-y-auto px-4 py-5 space-y-5 sm:px-6 sm:py-6 sm:space-y-6">
         <div>
-          <h2 className="text-lg font-semibold text-gray-50 sm:text-xl">Review Report</h2>
-          <p className="mt-2 text-sm leading-relaxed text-gray-300">{session.problemDescription}</p>
+          <h2 className="text-xl font-semibold text-[#F8FAFC]">
+            Review Report
+          </h2>
+          <p className="mt-1.5 text-sm leading-relaxed text-[#94A3B8]">
+            {session.problemDescription}
+          </p>
         </div>
 
-        {/* Constraints if any */}
         {session.constraints.length > 0 && (
-          <div>
-            <h3 className="text-xs font-medium text-gray-400 uppercase tracking-wider mb-2">Constraints</h3>
-            <ul className="space-y-1">
+          <div className="rounded-lg border border-[#1F2937] bg-[#111827] px-4 py-3">
+            <h3 className="text-xs font-medium text-[#94A3B8] uppercase tracking-wider mb-2">
+              Review Constraints
+            </h3>
+            <ul className="space-y-1.5">
               {session.constraints.map((c, i) => (
-                <li key={i} className="text-sm text-gray-300 flex items-start gap-2">
-                  <span className="text-violet-400 mt-0.5 shrink-0">—</span>
+                <li
+                  key={i}
+                  className="text-sm text-[#F8FAFC] flex items-start gap-2"
+                >
+                  <span className="text-[#7C3AED] mt-0.5 shrink-0 font-mono text-xs">
+                    -
+                  </span>
                   <span>{c.text}</span>
                 </li>
               ))}
@@ -191,32 +202,51 @@ export default function ResultsDashboard({
           </div>
         )}
 
-        {/* Early artifacts — show what agents have produced so far */}
         {hasArtifacts && (
           <div>
-            <h3 className="text-xs font-medium text-gray-400 uppercase tracking-wider mb-2">
+            <h3 className="text-sm font-medium text-[#94A3B8] uppercase tracking-wider mb-3">
               Findings so far
             </h3>
             <div className="space-y-2">
-              {[...acceptedArtifacts, ...draftArtifacts].slice(0, 5).map((a) => (
-                <div key={a.id} className="rounded-lg border border-gray-700/50 bg-gray-900/40 px-3 py-2.5">
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs font-medium text-gray-500 uppercase">{a.type}</span>
-                    {a.status === "accepted" && <span className="text-[10px] text-green-400">✓ accepted</span>}
+              {[...acceptedArtifacts, ...draftArtifacts]
+                .slice(0, 5)
+                .map((a) => (
+                  <div
+                    key={a.id}
+                    className="rounded-lg border border-[#1F2937] bg-[#111827] px-4 py-3"
+                  >
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs font-mono text-[#64748B] uppercase">
+                        {a.type}
+                      </span>
+                      {a.status === "accepted" && (
+                        <span className="text-[10px] text-green-400 font-mono">
+                          accepted
+                        </span>
+                      )}
+                    </div>
+                    <p className="mt-1 text-sm font-medium text-[#F8FAFC]">
+                      {a.title}
+                    </p>
+                    <p className="mt-1 text-sm text-[#94A3B8] line-clamp-2">
+                      {a.content}
+                    </p>
                   </div>
-                  <p className="mt-1 text-sm font-medium text-gray-200">{a.title}</p>
-                  <p className="mt-1 text-sm text-gray-400 line-clamp-2">{a.content}</p>
-                </div>
-              ))}
+                ))}
             </div>
           </div>
         )}
 
-        {/* Progress note */}
         {!hasArtifacts && (
-          <div className="rounded-lg border border-gray-700/50 bg-gray-800/30 px-4 py-3 text-center">
-            <p className="text-sm text-gray-400">
-              The review report will appear here after analysis completes.
+          <div className="rounded-xl border border-[#1F2937] bg-[#111827] px-5 py-6 text-center">
+            <div className="mx-auto mb-3 w-10 h-10 rounded-full bg-[#7C3AED]/12 flex items-center justify-center">
+              <ShieldAlert size={20} className="text-[#7C3AED]" />
+            </div>
+            <p className="text-sm font-medium text-[#F8FAFC]">
+              Analyzing repository...
+            </p>
+            <p className="mt-1.5 text-xs text-[#64748B]">
+              Findings will appear here after the review completes.
             </p>
           </div>
         )}
@@ -224,181 +254,321 @@ export default function ResultsDashboard({
     );
   }
 
-  // Derive headline from top recommended decision or overall confidence
-  const topDecision = consensus.recommendedDecisions?.[0];
-  const headline = topDecision
-    ? `Top finding: ${topDecision.title} \u2014 confidence ${formatConfidence(topDecision.confidence)}%`
-    : `Overall Confidence: ${formatConfidence(consensus.overallConfidence || 0)}%`;
+  // ─── Main report: consensus available ────────────────────────────────────────
+  const score = formatConfidence(consensus.overallConfidence || 0);
+  const verdict = deriveVerdict(score);
+  const VerdictIcon = verdict.icon;
 
-  // Sort decisions by confidence descending
-  const sortedDecisions = [...(consensus.recommendedDecisions || [])].sort(
+  const agreements = consensus.agreements || [];
+  const disagreements = consensus.disagreements || [];
+  const agreeCount = agreements.length;
+  const disagreeCount = disagreements.length;
+  const totalPoints = agreeCount + disagreeCount;
+  const agreementPct =
+    totalPoints > 0 ? Math.round((agreeCount / totalPoints) * 100) : 0;
+
+  const risks = [...(consensus.identifiedRisks || [])];
+  const severityOrder: Record<Severity, number> = { high: 0, medium: 1, low: 2 };
+  risks.sort((a, b) => severityOrder[a.severity] - severityOrder[b.severity]);
+
+  const decisions = [...(consensus.recommendedDecisions || [])].sort(
     (a, b) => b.confidence - a.confidence
   );
-  const visibleLimit = 3;
-  const cappedDecisions = showAllDecisions ? sortedDecisions : sortedDecisions.slice(0, visibleLimit);
-  const hasMoreDecisions = sortedDecisions.length > visibleLimit;
 
-  // Sort risks by severity: high > medium > low
-  const severityOrder: Record<Severity, number> = { high: 0, medium: 1, low: 2 };
-  const sortedRisks = [...(consensus.identifiedRisks || [])].sort(
-    (a, b) => severityOrder[a.severity] - severityOrder[b.severity]
-  );
-  const cappedRisks = showAllRisks ? sortedRisks : sortedRisks.slice(0, visibleLimit);
-  const hasMoreRisks = sortedRisks.length > visibleLimit;
+  const openQuestions = consensus.openQuestions || [];
+  const summary = deriveSummary(agreements, risks, decisions);
+
+  const visibleLimit = 5;
+  const cappedRisks = showAllRisks ? risks : risks.slice(0, visibleLimit);
+  const cappedDecisions = showAllDecisions
+    ? decisions
+    : decisions.slice(0, visibleLimit);
+  const cappedAgreements = showAllAgreements
+    ? agreements
+    : agreements.slice(0, 3);
+
+  const highRisks = risks.filter((r) => r.severity === "high");
+  const mediumRisks = risks.filter((r) => r.severity === "medium");
+  const lowRisks = risks.filter((r) => r.severity === "low");
 
   return (
-    <div className="h-full overflow-y-auto px-3 py-3 space-y-3 sm:px-4 sm:py-4 sm:space-y-5">
-      {/* Headline / TL;DR */}
-      <div className="rounded-lg bg-violet-500/8 border border-violet-600/30 px-4 py-3">
-        <p className="text-base font-semibold text-violet-100">{headline}</p>
-        <p className="mt-1 text-sm text-gray-400 line-clamp-2">{session.problemDescription}</p>
+    <div className="h-full overflow-y-auto px-4 py-5 space-y-5 sm:px-6 sm:py-6 sm:space-y-6">
+      {/* ─── Top Summary Card ─────────────────────────────────────────────── */}
+      <div className="rounded-xl border border-[#1F2937] bg-[#111827] p-5">
+        <div className="flex items-start justify-between gap-4">
+          <div className="flex-1 min-w-0">
+            <h2 className="text-lg font-semibold text-[#F8FAFC] sm:text-xl">
+              Review Report
+            </h2>
+            <p className="mt-1 text-sm text-[#94A3B8] line-clamp-2">
+              {session.problemDescription}
+            </p>
+          </div>
+          <ScoreRing score={score} />
+        </div>
+
+        <div className="mt-4 flex items-center gap-2">
+          <VerdictIcon size={16} className={verdict.color} />
+          <span className={`text-sm font-semibold ${verdict.color}`}>
+            {verdict.label}
+          </span>
+          <span className="text-[#64748B] text-xs font-mono ml-auto">
+            {score}/100
+          </span>
+        </div>
+        <p className="mt-2 text-sm text-[#94A3B8] leading-relaxed">
+          {summary}
+        </p>
+
+        <div className="mt-4 grid grid-cols-3 gap-3 pt-3 border-t border-[#1F2937]">
+          <div className="text-center">
+            <p className="text-xs text-[#64748B]">Risks</p>
+            <p className="text-sm font-mono font-semibold text-[#F8FAFC]">
+              {risks.length}
+            </p>
+          </div>
+          <div className="text-center">
+            <p className="text-xs text-[#64748B]">Fixes</p>
+            <p className="text-sm font-mono font-semibold text-[#F8FAFC]">
+              {decisions.length}
+            </p>
+          </div>
+          <div className="text-center">
+            <p className="text-xs text-[#64748B]">Agreement</p>
+            <p className="text-sm font-mono font-semibold text-[#F8FAFC]">
+              {agreementPct}%
+            </p>
+          </div>
+        </div>
       </div>
 
-      {/* Consensus Meter */}
-      <ConsensusMeter
-        agreements={consensus.agreements?.length || 0}
-        disagreements={consensus.disagreements?.length || 0}
-      />
+      {/* ─── Risks Found ──────────────────────────────────────────────────── */}
+      {risks.length > 0 && (
+        <section>
+          <div className="flex items-center gap-2 mb-3">
+            <ShieldAlert size={16} className="text-[#94A3B8]" />
+            <h3 className="text-sm font-semibold text-[#F8FAFC]">
+              Risks Found
+            </h3>
+            {highRisks.length > 0 && (
+              <span className="ml-auto text-xs font-mono text-red-400">
+                {highRisks.length} critical
+              </span>
+            )}
+          </div>
 
-      {/* Key Decisions */}
-      {sortedDecisions.length > 0 && (
-        <div>
-          <h3 className="text-sm font-medium text-gray-300 mb-3">
-            Key Findings
-          </h3>
           <div className="space-y-2">
-            {cappedDecisions.map((decision, i) => (
+            {cappedRisks.map((risk, i) => (
               <div
                 key={i}
-                className="rounded-lg bg-green-500/5 border border-green-600/30 p-3"
+                className={`rounded-lg border px-4 py-3 ${
+                  risk.severity === "high"
+                    ? "border-red-500/30 bg-red-500/5"
+                    : risk.severity === "medium"
+                      ? "border-amber-500/20 bg-amber-500/5"
+                      : "border-[#1F2937] bg-[#111827]"
+                }`}
               >
-                <div className="flex items-start justify-between gap-2">
-                  <h4 className="text-sm font-medium text-green-300">
-                    {decision.title}
-                  </h4>
-                  <span className="text-sm text-green-300 font-mono shrink-0">
-                    {formatConfidence(decision.confidence)}%
+                <div className="flex items-center gap-2 mb-1.5">
+                  <span
+                    className={`text-xs font-mono font-medium ${severityTextColors[risk.severity]}`}
+                  >
+                    {severityLabels[risk.severity]}
+                  </span>
+                  <span className="text-[#64748B] text-xs">
+                    {risk.raisedBy
+                      .map((agentId) => agentLabels[agentId])
+                      .join(", ")}
                   </span>
                 </div>
-                <p className="mt-2 line-clamp-3 text-sm leading-relaxed text-gray-300 sm:line-clamp-none">
-                  {decision.description}
+                <p className="text-sm text-[#F8FAFC] leading-relaxed">
+                  {risk.description}
                 </p>
               </div>
             ))}
           </div>
-          {hasMoreDecisions && (
+
+          {risks.length > visibleLimit && (
             <button
-              onClick={() => setShowAllDecisions(!showAllDecisions)}
-              className="mt-2 flex min-h-10 items-center gap-1 text-sm text-violet-300 hover:text-violet-200 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500/70 rounded"
-              aria-expanded={showAllDecisions}
+              onClick={() => setShowAllRisks(!showAllRisks)}
+              className="mt-2 flex items-center gap-1 text-xs text-[#7C3AED] hover:text-[#8B5CF6] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#7C3AED]/50 rounded px-1 py-1"
+              aria-expanded={showAllRisks}
             >
-              {showAllDecisions ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
-              {showAllDecisions ? "Show less" : `Show all (${sortedDecisions.length})`}
+              {showAllRisks ? (
+                <ChevronUp size={12} />
+              ) : (
+                <ChevronDown size={12} />
+              )}
+              {showAllRisks ? "Show less" : `Show all ${risks.length} risks`}
             </button>
           )}
-        </div>
+
+          {risks.length > 1 && (
+            <div className="mt-3 flex items-center gap-4 text-xs text-[#64748B]">
+              {highRisks.length > 0 && (
+                <span className="flex items-center gap-1">
+                  <span className="w-2 h-2 rounded-full bg-red-500" />
+                  {highRisks.length} high
+                </span>
+              )}
+              {mediumRisks.length > 0 && (
+                <span className="flex items-center gap-1">
+                  <span className="w-2 h-2 rounded-full bg-amber-500" />
+                  {mediumRisks.length} medium
+                </span>
+              )}
+              {lowRisks.length > 0 && (
+                <span className="flex items-center gap-1">
+                  <span className="w-2 h-2 rounded-full bg-green-500" />
+                  {lowRisks.length} low
+                </span>
+              )}
+            </div>
+          )}
+        </section>
       )}
 
-      {/* Risk Register */}
-      {sortedRisks.length > 0 && (
-        <div>
-          <h3 className="text-sm font-medium text-gray-300 mb-3">
-            Risks Found
-          </h3>
-          <div className="space-y-2 sm:hidden">
-            {cappedRisks.map((risk, i) => (
-              <div key={i} className="rounded-lg border border-gray-700 bg-gray-900/45 p-3">
-                <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm">
-                  <span className={`font-medium ${severityTextColors[risk.severity]}`}>
-                    {severityLabels[risk.severity]}
-                  </span>
-                  <span aria-hidden="true" className="text-gray-600">/</span>
-                  <span className="text-gray-400">
-                    Raised by {risk.raisedBy.map((agentId) => agentLabels[agentId]).join(", ")}
+      {/* ─── Suggested Fixes ──────────────────────────────────────────────── */}
+      {decisions.length > 0 && (
+        <section>
+          <div className="flex items-center gap-2 mb-3">
+            <Lightbulb size={16} className="text-[#94A3B8]" />
+            <h3 className="text-sm font-semibold text-[#F8FAFC]">
+              Suggested Fixes
+            </h3>
+          </div>
+
+          <div className="space-y-2">
+            {cappedDecisions.map((decision, i) => (
+              <div
+                key={i}
+                className="rounded-lg border border-[#1F2937] bg-[#111827] px-4 py-3"
+              >
+                <div className="flex items-start justify-between gap-2">
+                  <div className="flex items-start gap-2.5 min-w-0">
+                    <span className="text-xs font-mono text-[#64748B] mt-0.5 shrink-0">
+                      {i + 1}.
+                    </span>
+                    <h4 className="text-sm font-medium text-[#F8FAFC]">
+                      {decision.title}
+                    </h4>
+                  </div>
+                  <span className="text-xs font-mono text-[#94A3B8] shrink-0">
+                    {formatConfidence(decision.confidence)}%
                   </span>
                 </div>
-                <p className="mt-2 line-clamp-3 text-sm leading-relaxed text-gray-200">{risk.description}</p>
+                {decision.description && (
+                  <p className="mt-1.5 pl-5 text-sm text-[#94A3B8] leading-relaxed line-clamp-3">
+                    {decision.description}
+                  </p>
+                )}
               </div>
             ))}
           </div>
-          <div className="hidden rounded-lg border border-gray-700 overflow-hidden sm:block">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="bg-gray-800/50">
-                  <th className="text-left px-3 py-2 text-gray-300 font-medium">
-                    Risk
-                  </th>
-                  <th className="text-left px-3 py-2 text-gray-300 font-medium w-28">
-                    Severity
-                  </th>
-                  <th className="text-left px-3 py-2 text-gray-300 font-medium w-28">
-                    Raised By
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-700/50">
-                {cappedRisks.map((risk, i) => (
-                  <tr key={i} className="hover:bg-gray-800/30">
-                    <td className="px-3 py-2 text-gray-200">
-                      {risk.description}
-                    </td>
-                    <td className="px-3 py-2">
-                      <span className={`text-sm font-medium ${severityTextColors[risk.severity]}`}>
-                        {severityLabels[risk.severity]}
-                      </span>
-                    </td>
-                    <td className="px-3 py-2">
-                      <span className="text-gray-300">
-                        {risk.raisedBy.map((agentId) => agentLabels[agentId]).join(", ")}
-                      </span>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-          {hasMoreRisks && (
+
+          {decisions.length > visibleLimit && (
             <button
-              onClick={() => setShowAllRisks(!showAllRisks)}
-              className="mt-2 flex min-h-10 items-center gap-1 text-sm text-violet-300 hover:text-violet-200 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500/70 rounded"
-              aria-expanded={showAllRisks}
+              onClick={() => setShowAllDecisions(!showAllDecisions)}
+              className="mt-2 flex items-center gap-1 text-xs text-[#7C3AED] hover:text-[#8B5CF6] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#7C3AED]/50 rounded px-1 py-1"
+              aria-expanded={showAllDecisions}
             >
-              {showAllRisks ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
-              {showAllRisks ? "Show less" : `Show all (${sortedRisks.length})`}
+              {showAllDecisions ? (
+                <ChevronUp size={12} />
+              ) : (
+                <ChevronDown size={12} />
+              )}
+              {showAllDecisions
+                ? "Show less"
+                : `Show all ${decisions.length} fixes`}
             </button>
           )}
-        </div>
+        </section>
       )}
 
-      {/* Open Questions */}
-      {consensus.openQuestions && consensus.openQuestions.length > 0 && (
-        <div>
-          <h3 className="text-sm font-medium text-gray-300 mb-3">
-            Open Questions
-          </h3>
-          <ul className="space-y-2">
-            {consensus.openQuestions.map((question, i) => (
-              <li
+      {/* ─── Questions to Resolve ─────────────────────────────────────────── */}
+      {openQuestions.length > 0 && (
+        <section>
+          <div className="flex items-center gap-2 mb-3">
+            <HelpCircle size={16} className="text-[#94A3B8]" />
+            <h3 className="text-sm font-semibold text-[#F8FAFC]">
+              Questions to Resolve
+            </h3>
+          </div>
+
+          <div className="space-y-1.5">
+            {openQuestions.map((question, i) => (
+              <div
                 key={i}
-                className="flex items-start gap-2 text-sm text-gray-300 bg-gray-800/40 rounded-lg px-3 py-2 border border-gray-700/50"
+                className="flex items-start gap-2.5 rounded-lg border border-[#1F2937] bg-[#111827] px-4 py-2.5"
               >
-                <span className="text-cyan-400 shrink-0 mt-0.5">?</span>
-                <span>{question}</span>
-              </li>
+                <span className="text-[#38BDF8] shrink-0 mt-0.5 text-xs font-mono">
+                  ?
+                </span>
+                <p className="text-sm text-[#F8FAFC]">{question}</p>
+              </div>
             ))}
-          </ul>
-        </div>
+          </div>
+        </section>
       )}
 
-      {/* Export Button */}
+      {/* ─── Agent Agreement ──────────────────────────────────────────────── */}
+      {agreements.length > 0 && (
+        <section>
+          <div className="flex items-center gap-2 mb-3">
+            <CheckCircle2 size={16} className="text-[#94A3B8]" />
+            <h3 className="text-sm font-semibold text-[#F8FAFC]">
+              Agent Agreement
+            </h3>
+            <span className="ml-auto text-xs font-mono text-[#64748B]">
+              {agreeCount}/{totalPoints} points
+            </span>
+          </div>
+
+          <div className="space-y-1.5">
+            {cappedAgreements.map((agreement, i) => (
+              <div
+                key={i}
+                className="rounded-lg border border-[#1F2937] bg-[#111827] px-4 py-2.5"
+              >
+                <p className="text-sm text-[#F8FAFC]">{agreement.point}</p>
+                <p className="mt-1 text-xs text-[#64748B]">
+                  Supported by{" "}
+                  {agreement.supportingAgents
+                    .map((a) => agentLabels[a])
+                    .join(", ")}
+                </p>
+              </div>
+            ))}
+          </div>
+
+          {agreements.length > 3 && (
+            <button
+              onClick={() => setShowAllAgreements(!showAllAgreements)}
+              className="mt-2 flex items-center gap-1 text-xs text-[#7C3AED] hover:text-[#8B5CF6] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#7C3AED]/50 rounded px-1 py-1"
+              aria-expanded={showAllAgreements}
+            >
+              {showAllAgreements ? (
+                <ChevronUp size={12} />
+              ) : (
+                <ChevronDown size={12} />
+              )}
+              {showAllAgreements
+                ? "Show less"
+                : `Show all ${agreements.length} agreements`}
+            </button>
+          )}
+        </section>
+      )}
+
+      {/* ─── Export ───────────────────────────────────────────────────────── */}
       {onExport && (
-        <div className="border-t border-gray-700 pt-2 sm:pt-3">
+        <div className="pt-3 border-t border-[#1F2937]">
           <button
             onClick={onExport}
-            className="flex min-h-11 items-center gap-2 px-4 py-2.5 rounded-lg bg-gray-800 border border-gray-700 text-sm text-gray-200 hover:bg-gray-700 hover:text-white transition-colors w-full justify-center"
+            className="flex items-center gap-2 px-4 py-2.5 rounded-lg bg-[#7C3AED] hover:bg-[#8B5CF6] text-sm font-medium text-white transition-colors w-full justify-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#7C3AED]/50 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0D1117]"
           >
             <Download size={16} />
-            <span>Export Report as Markdown</span>
+            <span>Export Report</span>
           </button>
         </div>
       )}
