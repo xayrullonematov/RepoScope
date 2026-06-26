@@ -27,7 +27,7 @@ export default function WorkspaceTabs({
             px-3 py-1.5 text-xs font-medium rounded-md transition-colors
             ${
               activeTab === tab.id
-                ? "bg-emerald-500/15 text-emerald-200 border border-emerald-500/30"
+                ? "bg-violet-500/15 text-violet-200 border border-violet-500/30"
                 : "text-gray-400 hover:text-gray-200 hover:bg-gray-800 border border-transparent"
             }
           `}

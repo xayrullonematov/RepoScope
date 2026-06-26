@@ -115,19 +115,19 @@ function WorkspaceSummaryBar({
   const draftCount = session.artifacts.filter((a) => a.status === "draft").length;
   const riskCount = session.artifacts.filter((a) => a.type === "risk").length;
   const statusText = isActiveRound
-    ? "Generating recommendation..."
+    ? "Analyzing repo..."
     : isAwaitingIntervention
-      ? "Recommendation ready — review below"
+      ? "Report ready — review below"
       : session.status === "completed"
-        ? "Final recommendation"
+        ? "Review complete"
         : session.currentRound === 0
           ? "Ready"
-          : "Recommendation ready";
+          : "Report ready";
   const outputsText = topDecision
     ? topDecision.title
     : session.artifacts.length > 0
       ? `${acceptedCount} accepted, ${draftCount} draft, ${riskCount} risks`
-      : "Decision report will appear after consensus";
+      : "Findings will appear after analysis completes";
 
   return (
     <section className="border-b border-gray-800 bg-gray-950/70 px-3 py-2 sm:px-4 sm:py-2.5">
@@ -139,7 +139,7 @@ function WorkspaceSummaryBar({
         {!startRoundDisabled && (
           <button
             onClick={onStartRound}
-            className="inline-flex min-h-10 shrink-0 items-center gap-1.5 rounded-md bg-emerald-500 px-4 text-sm font-semibold text-gray-950 transition-colors hover:bg-emerald-400 disabled:opacity-60"
+            className="inline-flex min-h-10 shrink-0 items-center gap-1.5 rounded-md bg-[var(--brand-violet)] px-4 text-sm font-semibold text-white transition-colors hover:bg-[var(--violet-hover)] disabled:opacity-60"
             disabled={isStartingRound}
           >
             {isStartingRound ? <Loader2 size={14} className="animate-spin" /> : <Play size={14} />}
@@ -226,8 +226,8 @@ export default function WorkspaceLayout({ session, mutate }: WorkspaceLayoutProp
   // Tab configuration
   const tabs = useMemo(() => [
     { id: "results", label: "Report" },
-    { id: "artifacts", label: "Artifacts", badge: session.artifacts.length || undefined },
-    { id: "debate", label: "Reasoning" },
+    { id: "artifacts", label: "Findings", badge: session.artifacts.length || undefined },
+    { id: "debate", label: "Agent Debate" },
   ], [session.artifacts.length]);
 
   const handleStartRound = useCallback(async () => {
@@ -310,7 +310,7 @@ export default function WorkspaceLayout({ session, mutate }: WorkspaceLayoutProp
       >
         {/* Active round animated gradient border */}
         {isActiveRound && (
-          <div className="absolute bottom-0 left-0 right-0 h-px bg-emerald-500/70" />
+          <div className="absolute bottom-0 left-0 right-0 h-px bg-violet-500/70" />
         )}
 
         <div className="flex items-center justify-between">
@@ -326,8 +326,8 @@ export default function WorkspaceLayout({ session, mutate }: WorkspaceLayoutProp
               {session.problemDescription.slice(0, 60)}
             </h1>
             {isActiveRound && (
-              <span className="hidden sm:inline-flex items-center gap-1.5 text-xs text-emerald-300">
-                <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
+              <span className="hidden sm:inline-flex items-center gap-1.5 text-xs text-violet-300">
+                <span className="h-1.5 w-1.5 rounded-full bg-violet-400 animate-pulse" />
                 Analyzing
               </span>
             )}
@@ -388,7 +388,7 @@ export default function WorkspaceLayout({ session, mutate }: WorkspaceLayoutProp
           <div className="px-4 pt-3 shrink-0">
             <NotificationBanner
               type="warning"
-              message="Analysis complete. You can refine the recommendation by adding constraints, or run another pass."
+              message="Analysis complete. You can refine the report by adding constraints, or run another review pass."
               action={{ label: "Run Another Pass", onClick: handleStartRound }}
               dismissible
             />
@@ -420,7 +420,7 @@ export default function WorkspaceLayout({ session, mutate }: WorkspaceLayoutProp
               <button
                 type="button"
                 onClick={() => setAgentArenaExpanded((expanded) => !expanded)}
-                className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-md border border-gray-800 bg-gray-900 text-gray-400 transition-colors hover:border-gray-700 hover:bg-gray-800 hover:text-gray-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/70"
+                className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-md border border-gray-800 bg-gray-900 text-gray-400 transition-colors hover:border-gray-700 hover:bg-gray-800 hover:text-gray-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500/70"
                 aria-label={agentArenaExpanded ? "Collapse agent arena" : "Expand agent arena"}
                 title={agentArenaExpanded ? "Collapse agent arena" : "Expand agent arena"}
               >
@@ -476,9 +476,9 @@ export default function WorkspaceLayout({ session, mutate }: WorkspaceLayoutProp
                 <button
                   onClick={handleStartRound}
                   disabled={startRoundDisabled}
-                  className="inline-flex items-center gap-2 rounded-lg bg-emerald-500 px-6 py-3 font-semibold text-gray-950 transition-colors hover:bg-emerald-400 disabled:opacity-50"
+                  className="inline-flex items-center gap-2 rounded-lg bg-[var(--brand-violet)] px-6 py-3 font-semibold text-white transition-colors hover:bg-[var(--violet-hover)] disabled:opacity-50"
                 >
-                  Generate recommendation
+                  Generate report
                   <ArrowRight size={16} />
                 </button>
               </motion.div>
@@ -539,7 +539,7 @@ export default function WorkspaceLayout({ session, mutate }: WorkspaceLayoutProp
                       <select
                         value={artifactTypeFilter}
                         onChange={(e) => setArtifactTypeFilter(e.target.value as ArtifactType | "all")}
-                        className="min-h-10 min-w-0 px-3 py-2 text-sm bg-gray-800 border border-gray-700 rounded-lg text-gray-200 focus:outline-none focus:ring-2 focus:ring-emerald-500/50"
+                        className="min-h-10 min-w-0 px-3 py-2 text-sm bg-gray-800 border border-gray-700 rounded-lg text-gray-200 focus:outline-none focus:ring-2 focus:ring-violet-500/50"
                       >
                         <option value="all">All Types</option>
                         <option value="decision">Decision</option>
@@ -552,7 +552,7 @@ export default function WorkspaceLayout({ session, mutate }: WorkspaceLayoutProp
                       <select
                         value={artifactStatusFilter}
                         onChange={(e) => setArtifactStatusFilter(e.target.value as ArtifactStatus | "all")}
-                        className="min-h-10 min-w-0 px-3 py-2 text-sm bg-gray-800 border border-gray-700 rounded-lg text-gray-200 focus:outline-none focus:ring-2 focus:ring-emerald-500/50"
+                        className="min-h-10 min-w-0 px-3 py-2 text-sm bg-gray-800 border border-gray-700 rounded-lg text-gray-200 focus:outline-none focus:ring-2 focus:ring-violet-500/50"
                       >
                         <option value="all">All Status ({artifactStatusCounts.all})</option>
                         <option value="accepted">Accepted ({artifactStatusCounts.accepted})</option>
@@ -565,13 +565,13 @@ export default function WorkspaceLayout({ session, mutate }: WorkspaceLayoutProp
                             setArtifactTypeFilter("all");
                             setArtifactStatusFilter("all");
                           }}
-                          className="min-h-10 px-3 py-2 text-sm bg-emerald-500/10 border border-emerald-500/40 rounded-lg text-emerald-200 hover:bg-emerald-500/15 hover:text-emerald-100 transition-colors"
+                          className="min-h-10 px-3 py-2 text-sm bg-violet-500/10 border border-violet-500/40 rounded-lg text-violet-200 hover:bg-violet-500/15 hover:text-violet-100 transition-colors"
                         >
                           Show All
                         </button>
                       )}
                       <span className="self-center text-right text-sm text-gray-400 sm:ml-auto">
-                        {filteredArtifacts.length} artifact{filteredArtifacts.length !== 1 ? "s" : ""}
+                        {filteredArtifacts.length} finding{filteredArtifacts.length !== 1 ? "s" : ""}
                       </span>
                     </div>
 
@@ -590,8 +590,8 @@ export default function WorkspaceLayout({ session, mutate }: WorkspaceLayoutProp
                     ) : (
                       <EmptyState
                         icon={FileText}
-                        title="No artifacts yet"
-                        description="Decisions, risks, assumptions, and tradeoffs will appear here as agents produce them."
+                        title="No findings yet"
+                        description="Findings, risks, and recommendations will appear here as the analysis progresses."
                       />
                     )}
                   </div>
@@ -626,7 +626,7 @@ export default function WorkspaceLayout({ session, mutate }: WorkspaceLayoutProp
           {Array.from({ length: session.currentRound }, (_, i) => (
             <div
               key={i}
-              className="w-2 h-2 rounded-full bg-emerald-500"
+              className="w-2 h-2 rounded-full bg-violet-500"
               title={`Round ${i + 1}`}
             />
           ))}
