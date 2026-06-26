@@ -54,10 +54,10 @@ export default function InterventionPanel({ sessionId }: InterventionPanelProps)
         </div>
         <div>
           <h3 className="text-sm font-semibold text-yellow-300">
-            Your Turn - Intervention Point
+            Your Turn — Add Context
           </h3>
           <p className="text-xs text-yellow-500/80">
-            The debate is paused. Add a constraint or continue to the next round.
+            The review is paused. Add context or continue to the next pass.
           </p>
         </div>
       </div>
@@ -67,7 +67,7 @@ export default function InterventionPanel({ sessionId }: InterventionPanelProps)
         <textarea
           value={constraintText}
           onChange={(e) => setConstraintText(e.target.value)}
-          placeholder="Add a new constraint or guidance for the next round..."
+          placeholder="Add context or guidance for the next review pass..."
           className="w-full h-24 px-4 py-3 bg-gray-900/80 border border-gray-700 rounded-lg text-gray-100 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-yellow-500/50 focus:border-yellow-600 resize-none text-sm transition-all"
         />
 
@@ -92,7 +92,7 @@ export default function InterventionPanel({ sessionId }: InterventionPanelProps)
             className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 bg-yellow-600 hover:bg-yellow-500 disabled:opacity-50 disabled:hover:bg-yellow-600 text-white text-sm font-medium rounded-lg transition-colors"
           >
             <Send size={14} />
-            Add Constraint & Continue
+            Add & Continue
           </button>
           <button
             onClick={handleSkip}
