@@ -12,12 +12,12 @@ interface ArtifactDetailProps {
 }
 
 const typeLabels: Record<ArtifactType, string> = {
-  decision: "Decision",
+  decision: "Finding",
   risk: "Risk",
   assumption: "Assumption",
   tradeoff: "Tradeoff",
-  "open-question": "Open question",
-  recommendation: "Recommendation",
+  "open-question": "Question",
+  recommendation: "Fix",
 };
 
 const agentLabels: Record<AgentType, string> = {
