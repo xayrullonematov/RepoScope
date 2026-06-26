@@ -13,12 +13,12 @@ export default function ArtifactsPanel({ artifacts, sessionId, onStatusChange }:
   return (
     <div>
       <h2 className="text-sm font-semibold text-gray-300 uppercase tracking-wide mb-3">
-        Artifacts ({artifacts.length})
+        Findings ({artifacts.length})
       </h2>
       {artifacts.length === 0 ? (
         <div className="p-6 border border-gray-700 rounded-lg bg-gray-900/30 text-center">
           <p className="text-gray-500 text-sm">
-            No artifacts yet. Agents will create them during the debate.
+            No findings yet. Agents will surface them as the analysis progresses.
           </p>
         </div>
       ) : (

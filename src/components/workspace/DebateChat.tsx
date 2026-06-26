@@ -157,7 +157,7 @@ export default function DebateChat({
         {isLiveRound ? (
           <div className="flex-1 overflow-y-auto px-4 py-4 space-y-3">
             <p className="text-sm font-medium uppercase tracking-wide text-gray-400">
-              Agents are working on round {selectedRound}…
+              Agents are analyzing — pass {selectedRound}…
             </p>
             {ALL_AGENTS.map((agentId) => (
               <div
@@ -177,8 +177,8 @@ export default function DebateChat({
         ) : (
           <EmptyState
             icon={MessageSquare}
-            title={`No debate messages yet for round ${selectedRound}.`}
-            description="Messages appear here as agents contribute. Start a round to begin."
+            title={`No agent messages yet for pass ${selectedRound}.`}
+            description="Messages appear here as agents analyze your repo. Start a review pass to begin."
           />
         )}
       </div>

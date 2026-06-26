@@ -11,10 +11,10 @@ export default function ConsensusDashboard({ consensus }: ConsensusDashboardProp
     return (
       <div className="p-4 border border-gray-700 rounded-lg bg-gray-900/30">
         <h2 className="text-sm font-semibold text-gray-300 uppercase tracking-wide mb-2">
-          Consensus
+          Agent Agreement
         </h2>
         <p className="text-sm text-gray-500">
-          Consensus not yet generated. Complete a debate round to see results.
+          Agent agreement not yet generated. Complete a review pass to see results.
         </p>
       </div>
     );
@@ -23,7 +23,7 @@ export default function ConsensusDashboard({ consensus }: ConsensusDashboardProp
   return (
     <div className="space-y-4">
       <h2 className="text-sm font-semibold text-gray-300 uppercase tracking-wide">
-        Consensus
+        Agent Agreement
       </h2>
 
       {/* Agreements */}
@@ -80,7 +80,7 @@ export default function ConsensusDashboard({ consensus }: ConsensusDashboardProp
       {consensus.recommendedDecisions.length > 0 && (
         <div>
           <h3 className="text-xs font-medium text-blue-400 mb-2">
-            Recommended Decisions
+            Recommended Fixes
           </h3>
           <ol className="space-y-2 list-decimal list-inside">
             {consensus.recommendedDecisions.map((d, i) => (
