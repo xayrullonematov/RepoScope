@@ -45,15 +45,15 @@ export default function MobileTabBar({
               active ? "text-white" : "text-gray-500 hover:text-gray-300"
             }`}
           >
-            <Icon size={18} className={active ? "text-blue-400" : ""} />
+            <Icon size={18} className={active ? "text-violet-400" : ""} />
             <span className="font-medium">{tab.label}</span>
             {tab.badge !== undefined && tab.badge > 0 && (
-              <span className="absolute right-[24%] top-1 inline-flex h-4 min-w-[16px] items-center justify-center rounded-full bg-blue-500/90 px-1 text-xs font-medium text-white">
+              <span className="absolute right-[24%] top-1 inline-flex h-4 min-w-[16px] items-center justify-center rounded-full bg-violet-500/90 px-1 text-xs font-medium text-white">
                 {tab.badge}
               </span>
             )}
             {active && (
-              <span className="absolute left-1/3 right-1/3 top-0 h-0.5 rounded-b-full bg-blue-500" />
+              <span className="absolute left-1/3 right-1/3 top-0 h-0.5 rounded-b-full bg-violet-500" />
             )}
           </button>
         );
