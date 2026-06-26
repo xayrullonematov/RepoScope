@@ -48,12 +48,12 @@ const typeIconColors: Record<ArtifactType, string> = {
 };
 
 const typeLabels: Record<ArtifactType, string> = {
-  decision: "Decision",
+  decision: "Finding",
   risk: "Risk",
   assumption: "Assumption",
   tradeoff: "Tradeoff",
-  "open-question": "Open question",
-  recommendation: "Recommendation",
+  "open-question": "Question",
+  recommendation: "Fix",
 };
 
 const statusTextColors: Record<ArtifactStatus, string> = {
@@ -98,7 +98,7 @@ export default function ArtifactCard({ artifact, sessionId, onStatusChange }: Ar
       });
       if (!res.ok) {
         const body = (await res.json().catch(() => ({}))) as { error?: string };
-        throw new Error(body.error ?? "Failed to update artifact. Please try again.");
+        throw new Error(body.error ?? "Failed to update finding. Please try again.");
       }
       onStatusChange?.();
       // Server is now the source of truth — drop the override on next render cycle.
@@ -106,7 +106,7 @@ export default function ArtifactCard({ artifact, sessionId, onStatusChange }: Ar
     } catch (err) {
       setOptimisticStatus(previous);
       toast.error({
-        message: `Couldn't ${status === "accepted" ? "accept" : status === "rejected" ? "reject" : "update"} artifact`,
+        message: `Couldn't ${status === "accepted" ? "accept" : status === "rejected" ? "reject" : "update"} finding`,
         description: err instanceof Error ? err.message : "Network error — please try again.",
       });
     } finally {
@@ -181,7 +181,7 @@ export default function ArtifactCard({ artifact, sessionId, onStatusChange }: Ar
               onClick={() => setShowStatusDropdown(!showStatusDropdown)}
               disabled={isUpdating}
               className="flex min-h-10 min-w-10 items-center justify-center rounded-lg bg-gray-800 border border-gray-600 text-gray-200 transition-colors hover:bg-gray-700 disabled:opacity-60 sm:min-h-11 sm:min-w-11"
-              aria-label="Change artifact status"
+              aria-label="Change finding status"
             >
               <ChevronDown size={14} />
             </button>

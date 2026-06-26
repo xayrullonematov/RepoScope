@@ -541,13 +541,13 @@ export default function WorkspaceLayout({ session, mutate }: WorkspaceLayoutProp
                         onChange={(e) => setArtifactTypeFilter(e.target.value as ArtifactType | "all")}
                         className="min-h-10 min-w-0 px-3 py-2 text-sm bg-gray-800 border border-gray-700 rounded-lg text-gray-200 focus:outline-none focus:ring-2 focus:ring-violet-500/50"
                       >
-                        <option value="all">All Types</option>
-                        <option value="decision">Decision</option>
+                        <option value="all">All findings</option>
+                        <option value="decision">Finding</option>
                         <option value="risk">Risk</option>
                         <option value="assumption">Assumption</option>
                         <option value="tradeoff">Tradeoff</option>
-                        <option value="open-question">Open Question</option>
-                        <option value="recommendation">Recommendation</option>
+                        <option value="open-question">Question</option>
+                        <option value="recommendation">Fix</option>
                       </select>
                       <select
                         value={artifactStatusFilter}
