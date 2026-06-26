@@ -1,0 +1,31 @@
+{
+  "id": "FEAT-005",
+  "type": "fix",
+  "description": "Fix verdict logic to account for high-severity risks, add report identity header with repo/question metadata, remove duplicate score display, and rename 'Agent Agreement' section to 'Review Confidence'.",
+  "status": "in_progress",
+  "steps": [
+    "1. Update deriveVerdict to accept risks array and never return 'Ready to ship' when high-severity risks exist; multiple medium risks should also warn.",
+    "2. Add optional config prop (SessionConfig) to ResultsDashboardProps and display repo metadata in the top summary card if available.",
+    "3. Remove the duplicate score/100 text display that appears alongside the ScoreRing.",
+    "4. Rename 'Agent Agreement' section title to 'Review Confidence'.",
+    "5. Update unit tests if needed to account for the new deriveVerdict signature."
+  ],
+  "acceptance_criteria": [
+    "deriveVerdict never returns 'Ready to ship' when high-severity risks exist",
+    "Multiple medium risks produce a warning verdict even with high confidence",
+    "Optional config prop shows repository info when present, nothing when absent",
+    "No duplicate score/100 text alongside the ScoreRing",
+    "Section title reads 'Review Confidence' instead of 'Agent Agreement'",
+    "Export button remains visible and working",
+    "npm run build passes",
+    "npm run lint passes",
+    "npm run test passes"
+  ],
+  "verification": [
+    "npm run build exits with code 0",
+    "npm run lint exits with code 0",
+    "npm run test -- src/components/workspace/__tests__/ui-logic.test.ts exits with code 0"
+  ],
+  "blocked_reason": null,
+  "findings": null
+}
