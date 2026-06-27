@@ -2,7 +2,7 @@
   "id": "FEAT-001",
   "type": "feat",
   "description": "Rebuild the review workspace layout (WorkspaceLayout.tsx) with a new 3-tab information architecture: Overview (default), Findings, and Technical Activity. Create the new ReviewOverview component as the default tab showing a clean report summary, top findings, recommended next steps, and primary actions. Hide all agent/control-room UI behind Technical Activity tab. Create the ReviewProgressState component for the running/analyzing state that is calm and simple.",
-  "status": "in_progress",
+  "status": "completed",
   "steps": [
     "Create src/components/workspace/ReviewSummaryCard.tsx - a summary card that shows: review status, repo name, overall risk/readiness verdict, total findings count, severity breakdown (critical/high/medium/low counts), and recommended next action. Use existing deriveVerdict logic from ResultsDashboard.tsx and the ConsensusOutput type from domain.ts. Follow the styling pattern from the landing page sample report summary bar.",
     "Create src/components/workspace/TopFindingsList.tsx - show the top 3 findings by severity. Each finding shows severity badge, title, file/location if available from artifact content, short description. Pull data from session.artifacts sorted by severity (risks first, then decisions). Link to Findings tab for full list.",
@@ -28,5 +28,5 @@
     "Run `cd /projects/sandbox/movistan && npx vitest run` - no NEW test failures introduced"
   ],
   "blocked_reason": null,
-  "findings": ""
+  "findings": "Build passes cleanly. 22 pre-existing test failures (all backend: database-stores, round-orchestrator, summary-services, and 1 ui-logic deriveVerdict assertion) - none introduced by this change. The useEventStream hook returns Partial<Record<AgentType, PersistedEvent>> not a Map - corrected in TechnicalActivityPanel interface. StageTransitionToast is kept at the layout level since it monitors all transitions regardless of active tab."
 }
