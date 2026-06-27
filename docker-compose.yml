@@ -12,18 +12,22 @@ services:
       - DATABASE_URL=file:./data/production.db
       - HOSTNAME=0.0.0.0
 
-  nginx:
-    image: nginx:alpine
+  proxy:
+    image: caddy:2-alpine
     restart: unless-stopped
     ports:
       - "80:80"
       - "443:443"
+      - "443:443/udp"
     volumes:
-      - ./nginx.conf:/etc/nginx/conf.d/default.conf:ro
-      - ./certs:/etc/nginx/certs:ro
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy-data:/data
+      - caddy-config:/config
     depends_on:
       - app
 
 volumes:
   app-data:
   app-exports:
+  caddy-data:
+  caddy-config:

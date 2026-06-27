@@ -92,7 +92,7 @@ export default function InterventionPanel({ sessionId }: InterventionPanelProps)
             className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 bg-yellow-600 hover:bg-yellow-500 disabled:opacity-50 disabled:hover:bg-yellow-600 text-white text-sm font-medium rounded-lg transition-colors"
           >
             <Send size={14} />
-            Add & Continue
+            Add & continue review
           </button>
           <button
             onClick={handleSkip}
@@ -100,7 +100,7 @@ export default function InterventionPanel({ sessionId }: InterventionPanelProps)
             className="flex items-center gap-2 px-4 py-2.5 bg-gray-800 hover:bg-gray-700 border border-gray-600 disabled:opacity-50 text-gray-200 text-sm rounded-lg transition-colors"
           >
             <SkipForward size={14} />
-            Skip
+            Continue without adding
           </button>
         </div>
       </div>

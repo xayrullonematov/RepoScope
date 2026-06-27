@@ -124,7 +124,7 @@ export default function PriorSessionPicker({ onClose, onPick }: PriorSessionPick
                         {session.title || "Untitled review"}
                       </p>
                       <p className="mt-0.5 text-xs text-gray-500">
-                        Round {session.currentRound} · {session.status} · {timeAgo(session.createdAt)}
+                        Pass {session.currentRound} · {session.status} · {timeAgo(session.createdAt)}
                       </p>
                     </div>
                     {pickingId === session.id && <Loader2 size={14} className="animate-spin text-violet-400" />}

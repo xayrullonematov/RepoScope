@@ -89,7 +89,7 @@ export default function SessionList({ sessions, loading = false }: SessionListPr
                 {(session.title || session.problemDescription || "Untitled").slice(0, 60)}
               </p>
               <p className="mt-0.5 text-xs text-gray-500">
-                Round {session.currentRound} · {timeAgo(session.createdAt)}
+                Pass {session.currentRound} · {timeAgo(session.createdAt)}
               </p>
             </div>
             <StatusBadge status={session.status} />

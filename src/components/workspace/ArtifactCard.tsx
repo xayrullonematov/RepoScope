@@ -57,9 +57,9 @@ const typeLabels: Record<ArtifactType, string> = {
 };
 
 const statusTextColors: Record<ArtifactStatus, string> = {
-  draft: "text-amber-300",
-  accepted: "text-green-300",
-  rejected: "text-red-300",
+  draft: "text-amber-400",
+  accepted: "text-green-400",
+  rejected: "text-red-400",
 };
 
 const statusLabels: Record<ArtifactStatus, string> = {
@@ -79,7 +79,6 @@ export default function ArtifactCard({ artifact, sessionId, onStatusChange }: Ar
   const [expanded, setExpanded] = useState(false);
   const [showStatusDropdown, setShowStatusDropdown] = useState(false);
   const [isUpdating, setIsUpdating] = useState(false);
-  // Optimistic local override — falls back to server-provided status on next refresh.
   const [optimisticStatus, setOptimisticStatus] = useState<ArtifactStatus | null>(null);
 
   const Icon = typeIcons[artifact.type] || FileCheck;
@@ -101,7 +100,6 @@ export default function ArtifactCard({ artifact, sessionId, onStatusChange }: Ar
         throw new Error(body.error ?? "Failed to update finding. Please try again.");
       }
       onStatusChange?.();
-      // Server is now the source of truth — drop the override on next render cycle.
       setOptimisticStatus(null);
     } catch (err) {
       setOptimisticStatus(previous);
@@ -118,38 +116,33 @@ export default function ArtifactCard({ artifact, sessionId, onStatusChange }: Ar
     <>
       <div
         className={`
-          group relative rounded-lg border border-l-4 border-gray-700 bg-gray-900/50
-          hover:-translate-y-px hover:shadow-lg hover:shadow-black/20
+          group relative rounded-lg border border-l-4 border-[var(--border)] bg-[var(--surface)]
+          hover:bg-[var(--surface-elevated)] hover:-translate-y-px hover:shadow-lg hover:shadow-black/20
           transition-all duration-200 cursor-pointer
           ${typeBorderColors[artifact.type]}
         `}
         onClick={() => setExpanded(true)}
       >
         <div className="p-3 sm:p-4">
-          {/* Header: Icon + Title */}
+          {/* Header */}
           <div className="flex items-start gap-2 pr-11 sm:gap-3 sm:pr-12">
             <div className={`shrink-0 mt-0.5 ${typeIconColors[artifact.type]}`}>
-              <Icon size={18} className="sm:h-5 sm:w-5" />
+              <Icon size={18} />
             </div>
             <div className="flex-1 min-w-0">
-              <h3 className="text-sm font-medium text-gray-100 line-clamp-2 leading-snug">
+              <h3 className="text-sm font-medium text-[var(--text-primary)] line-clamp-2 leading-snug">
                 {artifact.title}
               </h3>
-              <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-xs text-gray-400 sm:text-sm">
-                <span
-                  className={`font-medium ${statusTextColors[effectiveStatus]} ${
-                    optimisticStatus ? "opacity-80" : ""
-                  }`}
-                  title={optimisticStatus ? "Saving..." : undefined}
-                >
+              <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-xs">
+                <span className={`font-medium ${statusTextColors[effectiveStatus]}`}>
                   {statusLabels[effectiveStatus]}
                 </span>
-                <span aria-hidden="true" className="text-gray-600">/</span>
-                <span>{typeLabels[artifact.type]}</span>
+                <span aria-hidden="true" className="text-[var(--border)]">/</span>
+                <span className="text-[var(--text-muted)]">{typeLabels[artifact.type]}</span>
                 {artifact.version > 1 && (
                   <>
-                    <span aria-hidden="true" className="text-gray-600">/</span>
-                    <span className="font-mono">v{artifact.version}</span>
+                    <span aria-hidden="true" className="text-[var(--border)]">/</span>
+                    <span className="font-mono text-[var(--text-muted)]">v{artifact.version}</span>
                   </>
                 )}
               </div>
@@ -158,45 +151,42 @@ export default function ArtifactCard({ artifact, sessionId, onStatusChange }: Ar
 
           {/* Content Preview */}
           {artifact.content && (
-            <p className="mt-2 line-clamp-1 text-sm leading-relaxed text-gray-300 sm:mt-3 sm:line-clamp-2">
+            <p className="mt-2 line-clamp-2 text-sm leading-relaxed text-[var(--text-secondary)]">
               {artifact.content}
             </p>
           )}
 
-          {/* Meta: Contributors */}
+          {/* Contributors */}
           {artifact.contributors.length > 0 && (
-            <p className="mt-2 truncate text-xs text-gray-500 sm:mt-3 sm:text-sm">
-              Contributors: {artifact.contributors.map((contributor) => agentLabels[contributor] ?? contributor).join(", ")}
+            <p className="mt-2 truncate text-xs text-[var(--text-muted)]">
+              {artifact.contributors.map((c) => agentLabels[c] ?? c).join(", ")}
             </p>
           )}
         </div>
 
-        {/* Status Change Dropdown - always visible for draft artifacts */}
+        {/* Status dropdown for draft */}
         {effectiveStatus === "draft" && (
-          <div
-            className="absolute right-2 top-2"
-            onClick={(e) => e.stopPropagation()}
-          >
+          <div className="absolute right-2 top-2" onClick={(e) => e.stopPropagation()}>
             <button
               onClick={() => setShowStatusDropdown(!showStatusDropdown)}
               disabled={isUpdating}
-              className="flex min-h-10 min-w-10 items-center justify-center rounded-lg bg-gray-800 border border-gray-600 text-gray-200 transition-colors hover:bg-gray-700 disabled:opacity-60 sm:min-h-11 sm:min-w-11"
+              className="flex min-h-10 min-w-10 items-center justify-center rounded-lg border border-[var(--border)] bg-[var(--surface-elevated)] text-[var(--text-secondary)] transition-colors hover:bg-[var(--surface)] disabled:opacity-60"
               aria-label="Change finding status"
             >
               <ChevronDown size={14} />
             </button>
 
             {showStatusDropdown && (
-              <div className="absolute right-0 top-full mt-1 w-32 bg-gray-800 border border-gray-600 rounded-lg shadow-xl overflow-hidden z-10">
+              <div className="absolute right-0 top-full mt-1 w-32 border border-[var(--border)] bg-[var(--surface-elevated)] rounded-lg shadow-xl overflow-hidden z-10">
                 <button
                   onClick={() => handleStatusChange("accepted")}
-                  className="min-h-10 w-full px-3 py-2 text-left text-sm text-green-300 hover:bg-green-900/30 transition-colors"
+                  className="min-h-10 w-full px-3 py-2 text-left text-sm text-green-400 hover:bg-green-500/10 transition-colors"
                 >
                   Accept
                 </button>
                 <button
                   onClick={() => handleStatusChange("rejected")}
-                  className="min-h-10 w-full px-3 py-2 text-left text-sm text-red-300 hover:bg-red-900/30 transition-colors"
+                  className="min-h-10 w-full px-3 py-2 text-left text-sm text-red-400 hover:bg-red-500/10 transition-colors"
                 >
                   Reject
                 </button>

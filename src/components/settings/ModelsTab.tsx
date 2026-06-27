@@ -7,11 +7,11 @@ import FormShell, { Field, inputClass } from "./FormShell";
 import SettingsLoadingState from "./LoadingState";
 
 const tierFields = [
-  { key: "proposal", label: "Proposal", hint: "Used when an agent drafts a fresh idea." },
-  { key: "critique", label: "Critique", hint: "Critique passes — defaults to a cheaper tier." },
-  { key: "revision", label: "Revision", hint: "Revising a proposal after critique." },
-  { key: "consensus", label: "Consensus", hint: "Synthesising the final decisions." },
-  { key: "summary", label: "Summary", hint: "Round and workspace summarisation." },
+  { key: "proposal", label: "Initial analysis", hint: "Used when the AI reads and gathers findings." },
+  { key: "critique", label: "Review pass", hint: "Used for verifying and challenging initial findings." },
+  { key: "revision", label: "Refinement", hint: "Used when improving findings after review." },
+  { key: "consensus", label: "Final synthesis", hint: "Used to produce the final report." },
+  { key: "summary", label: "Summary", hint: "Used for generating review summaries." },
 ] as const;
 
 type TierKey = (typeof tierFields)[number]["key"];
@@ -51,7 +51,7 @@ function ModelsForm({ initial, update }: ModelsFormProps) {
   return (
     <FormShell
       title="Model selection"
-      description="The default model is used for any stage that doesn't have an override."
+      description="The default model is used for any step that doesn't have an override."
       saving={saving}
       error={saveError}
       footer="Changes are stored in-memory until the server restarts."
@@ -97,7 +97,7 @@ function ModelsForm({ initial, update }: ModelsFormProps) {
 
       <fieldset className="space-y-3 rounded-lg border border-gray-800 bg-gray-950/40 p-3">
         <legend className="px-1 text-xs font-semibold uppercase tracking-wide text-gray-400">
-          Per-stage overrides
+          Per-step overrides
         </legend>
         {tierFields.map((tier) => (
           <Field key={tier.key} label={tier.label} htmlFor={`tier-${tier.key}`} hint={tier.hint}>

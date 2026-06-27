@@ -126,7 +126,7 @@ export default function NewSessionForm({ githubRepo: controlledRepo, onGithubRep
       <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-6">
         {/* GitHub Repository - Primary */}
         <div>
-          <label htmlFor="github-repo" className="flex items-center gap-1.5 text-sm font-medium text-gray-300 mb-2">
+          <label htmlFor="github-repo" className="flex items-center gap-1.5 text-sm font-medium text-[var(--text-secondary)] mb-2">
             <GitBranch size={14} className="text-violet-400" />
             GitHub repository
           </label>
@@ -144,7 +144,7 @@ export default function NewSessionForm({ githubRepo: controlledRepo, onGithubRep
 
         {/* What to check */}
         <div>
-          <label htmlFor="problem" className="block text-sm font-medium text-gray-300 mb-2">
+          <label htmlFor="problem" className="block text-sm font-medium text-[var(--text-secondary)] mb-2">
             What should we check?
           </label>
           <div className="mb-2 flex flex-wrap items-center gap-1.5">
@@ -187,8 +187,8 @@ export default function NewSessionForm({ githubRepo: controlledRepo, onGithubRep
             <div className="mt-3 space-y-4 rounded-xl border border-[var(--border)] bg-[var(--surface-elevated)] p-3 sm:mt-4 sm:space-y-5 sm:p-4">
               {/* Token Budget */}
               <div>
-                <label htmlFor="budget" className="block text-sm font-medium text-gray-300 mb-1">
-                  Token Budget
+                <label htmlFor="budget" className="block text-sm font-medium text-[var(--text-secondary)] mb-1">
+                  Usage limit
                 </label>
                 <input
                   id="budget"
@@ -200,13 +200,13 @@ export default function NewSessionForm({ githubRepo: controlledRepo, onGithubRep
                   className="min-h-11 w-full rounded-lg border border-[var(--border)] bg-[var(--surface-elevated)] px-3 py-2 text-sm text-[var(--text-primary)] placeholder-[var(--text-muted)] focus:border-[var(--brand-violet)] focus:outline-none focus:ring-2 focus:ring-[var(--violet-glow)]"
                 />
                 <p className="text-sm text-[var(--text-muted)] mt-1">
-                  Maximum tokens the review can consume. Leave empty for unlimited.
+                  Maximum tokens the review can consume. Leave empty for no limit.
                 </p>
               </div>
 
               {/* Clarification policy */}
               <div>
-                <label htmlFor="clarification-policy" className="flex items-center gap-1.5 text-sm font-medium text-gray-300 mb-1">
+                <label htmlFor="clarification-policy" className="flex items-center gap-1.5 text-sm font-medium text-[var(--text-secondary)] mb-1">
                   <MessageCircleQuestion size={14} className="text-[var(--text-muted)]" />
                   Clarification policy
                 </label>
@@ -216,20 +216,20 @@ export default function NewSessionForm({ githubRepo: controlledRepo, onGithubRep
                   onChange={(e) => setClarificationPolicy(e.target.value as ClarificationPolicy)}
                   className="min-h-11 w-full rounded-lg border border-[var(--border)] bg-[var(--surface-elevated)] px-3 py-2 text-sm text-[var(--text-primary)] focus:border-[var(--brand-violet)] focus:outline-none focus:ring-2 focus:ring-[var(--violet-glow)]"
                 >
-                  <option value="allow">Allow - pause when agents need clarification</option>
-                  <option value="limit-1">Limit to 1 question per stage</option>
-                  <option value="limit-3">Limit to 3 questions per stage</option>
-                  <option value="suppress">Suppress - fully autonomous run</option>
+                  <option value="allow">Allow — pause when AI reviewers need clarification</option>
+                  <option value="limit-1">Limit to 1 question per pass</option>
+                  <option value="limit-3">Limit to 3 questions per pass</option>
+                  <option value="suppress">Suppress — fully autonomous run</option>
                 </select>
                 <p className="text-sm text-[var(--text-muted)] mt-1">
-                  Controls whether agents can ask you questions mid-review.
+                  Controls whether AI reviewers can ask you questions mid-review.
                 </p>
               </div>
 
               {/* Prior session summary */}
               <div>
                 <div className="flex items-center justify-between mb-1">
-                  <label htmlFor="prior-session" className="flex items-center gap-1.5 text-sm font-medium text-gray-300">
+                  <label htmlFor="prior-session" className="flex items-center gap-1.5 text-sm font-medium text-[var(--text-secondary)]">
                     <BookOpen size={14} className="text-[var(--text-muted)]" />
                     Prior review context
                   </label>
@@ -245,7 +245,7 @@ export default function NewSessionForm({ githubRepo: controlledRepo, onGithubRep
                   id="prior-session"
                   value={priorSessionSummary}
                   onChange={(e) => setPriorSessionSummary(e.target.value)}
-                  placeholder="Paste or import a prior review summary so agents continue from where you left off."
+                  placeholder="Paste or import a prior review summary so the analysis continues from where you left off."
                   className="h-24 w-full resize-none rounded-lg border border-[var(--border)] bg-[var(--surface-elevated)] px-3 py-2 text-sm leading-relaxed text-[var(--text-primary)] placeholder-[var(--text-muted)] focus:border-[var(--brand-violet)] focus:outline-none focus:ring-2 focus:ring-[var(--violet-glow)] sm:h-28"
                 />
               </div>

@@ -30,7 +30,7 @@ export default function AppHeader() {
       <Link
         href={href}
         className={`rounded-md px-3 py-1.5 text-sm transition-colors ${
-          active ? "bg-[var(--violet-soft-bg)] text-violet-200" : "text-gray-400 hover:text-gray-100"
+          active ? "bg-[var(--violet-soft-bg)] text-violet-200" : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
         }`}
       >
         {label}
@@ -41,7 +41,7 @@ export default function AppHeader() {
   return (
     <header className="sticky top-0 z-40 h-16 border-b border-[var(--border)] bg-[var(--background)]/85 backdrop-blur">
       <div className="mx-auto flex h-full max-w-7xl items-center justify-between gap-4 px-4 sm:px-6">
-        <Link href="/" className="flex items-center gap-2.5 text-gray-50 transition-opacity hover:opacity-80">
+        <Link href="/" className="flex items-center gap-2.5 text-[var(--text-primary)] transition-opacity hover:opacity-80">
           <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-violet-600 to-purple-700 shadow-sm shadow-violet-500/20">
             <Search size={16} className="text-white" />
           </span>

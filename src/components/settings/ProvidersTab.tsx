@@ -70,7 +70,7 @@ function ProvidersForm({ initial, update }: ProvidersFormProps) {
   return (
     <FormShell
       title="Provider endpoint"
-      description="Choose where agent calls are sent. The API key is read from server-side environment variables and is never sent to the browser."
+      description="Choose where AI requests are sent. The API key is read from server-side environment variables and is never sent to the browser."
       saving={saving}
       error={saveError}
       footer="Pick a preset to suggest a base URL — you can still edit it."
@@ -91,7 +91,7 @@ function ProvidersForm({ initial, update }: ProvidersFormProps) {
         setSaving(true);
         try {
           await update({ baseUrl: trimmed });
-          toast.success({ message: "Provider updated", description: "Agents will use the new endpoint on next call." });
+          toast.success({ message: "Provider updated", description: "AI reviewers will use the new endpoint on the next review." });
         } catch (err) {
           const message = err instanceof Error ? err.message : "Save failed";
           setSaveError(message);
@@ -169,7 +169,7 @@ function ProvidersForm({ initial, update }: ProvidersFormProps) {
       <div className="rounded-lg border border-gray-700 bg-gray-950/50 px-4 py-3">
         <h4 className="text-sm font-semibold text-gray-100">Trust and privacy</h4>
         <p className="mt-1 text-sm leading-relaxed text-gray-300">
-          Provider settings are stored server-side for this workspace. API keys stay in environment variables, and GitHub grounding uses read-only repo access scoped to the repository you enter for a session.
+          Provider settings are stored server-side for this workspace. API keys stay in environment variables, and GitHub grounding uses read-only repo access scoped to the repository you enter for a review.
         </p>
       </div>
     </FormShell>

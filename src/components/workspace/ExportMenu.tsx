@@ -81,7 +81,7 @@ const ExportMenu = forwardRef<ExportMenuHandle, ExportMenuProps>(function Export
   async function handleDownloadMd() {
     await withBusy("md-dl", async () => {
       const md = await fetchMarkdown();
-      downloadBlob(md, "text/markdown", `session-${sessionId}.md`);
+      downloadBlob(md, "text/markdown", `review-${sessionId}.md`);
       toast.success({ message: "Downloaded Markdown" });
     });
     setOpen(false);
@@ -89,7 +89,7 @@ const ExportMenu = forwardRef<ExportMenuHandle, ExportMenuProps>(function Export
 
   async function handleDownloadJson() {
     await withBusy("json-dl", () => {
-      downloadBlob(sessionJson(), "application/json", `session-${sessionId}.json`);
+      downloadBlob(sessionJson(), "application/json", `review-${sessionId}.json`);
       toast.success({ message: "Downloaded JSON" });
     });
     setOpen(false);

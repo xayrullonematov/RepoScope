@@ -1,9 +1,10 @@
 "use client";
 
 import {
-  MessageSquare,
-  Search,
-  RefreshCw,
+  FolderSearch,
+  FileSearch,
+  ShieldCheck,
+  FileText,
   CheckCircle,
   Hand,
 } from "lucide-react";
@@ -19,12 +20,12 @@ const stages: {
   id: RoundStage;
   label: string;
   description: string;
-  icon: typeof MessageSquare;
+  icon: typeof FolderSearch;
 }[] = [
-  { id: "proposal", label: "Scanning", description: "Agents inspect files and gather initial findings", icon: MessageSquare },
-  { id: "critique", label: "Reviewing", description: "Agents challenge risks and verify likely issues", icon: Search },
-  { id: "revision", label: "Refining", description: "Agents improve findings and fixes", icon: RefreshCw },
-  { id: "consensus", label: "Finalizing", description: "Agents produce the review report", icon: CheckCircle },
+  { id: "proposal", label: "Reading repository", description: "Inspecting files and gathering initial findings", icon: FolderSearch },
+  { id: "critique", label: "Checking for issues", description: "Verifying risks and flagging problems", icon: ShieldCheck },
+  { id: "revision", label: "Refining findings", description: "Improving accuracy and fixing evidence", icon: FileSearch },
+  { id: "consensus", label: "Preparing report", description: "Producing the final prioritized report", icon: FileText },
 ];
 
 export default function StageProgressBar({
@@ -34,43 +35,40 @@ export default function StageProgressBar({
 }: StageProgressBarProps) {
   const showIntervention = currentStage === "awaiting-intervention";
 
-  const getSegmentState = (
-    stageId: RoundStage
-  ): "completed" | "active" | "pending" => {
+  const getSegmentState = (stageId: RoundStage): "completed" | "active" | "pending" => {
     if (completedStages.includes(stageId)) return "completed";
     if (currentStage === stageId) return "active";
     return "pending";
   };
 
-  const stageLabel = currentStage
-    ? stages.find((s) => s.id === currentStage)?.label ?? currentStage
-    : null;
-
   const currentLabel = currentStage
     ? currentStage === "awaiting-intervention"
-      ? `Round ${currentRound}: review needed`
-      : `Round ${currentRound}: ${stageLabel} in progress`
+      ? "Report ready"
+      : stages.find((s) => s.id === currentStage)?.label ?? "Working..."
     : currentRound === 0
-      ? "Ready to start first round"
-      : `Round ${currentRound}: waiting for next action`;
+      ? "Ready to start"
+      : "Waiting";
 
   return (
-    <div className="w-full border-b border-[#34362f] bg-[#151712] px-3 py-2 sm:px-4 sm:py-3">
+    <div className="w-full border-b border-[var(--border)] bg-[var(--surface)] px-3 py-2 sm:px-4 sm:py-3">
+      {/* Mobile: compact view */}
       <div className="flex items-center justify-between gap-3 sm:hidden">
         <div className="flex min-w-0 items-center gap-2">
           {showIntervention ? (
-            <Hand size={17} className="shrink-0 text-yellow-300" />
+            <Hand size={17} className="shrink-0 text-amber-400" />
           ) : currentStage ? (
-            <RefreshCw size={17} className="shrink-0 text-violet-300" />
+            <Loader size={17} className="shrink-0 text-violet-400 animate-spin" />
           ) : (
-            <MessageSquare size={17} className="shrink-0 text-gray-300" />
+            <FolderSearch size={17} className="shrink-0 text-[var(--text-muted)]" />
           )}
-          <span className="truncate text-sm font-medium text-gray-100">{currentLabel}</span>
+          <span className="truncate text-sm font-medium text-[var(--text-primary)]">{currentLabel}</span>
         </div>
-        <span className="shrink-0 rounded-full border border-gray-700 bg-gray-950/50 px-2 py-0.5 text-xs text-gray-300">
+        <span className="shrink-0 rounded-full border border-[var(--border)] bg-[var(--surface-elevated)] px-2 py-0.5 text-xs text-[var(--text-secondary)]">
           {completedStages.length}/4
         </span>
       </div>
+
+      {/* Desktop: full progress view */}
       <div className="hidden items-center gap-1 sm:flex">
         {stages.map((stage, idx) => {
           const state = getSegmentState(stage.id);
@@ -83,21 +81,14 @@ export default function StageProgressBar({
                   relative flex items-center gap-2 px-3 py-2 rounded-lg flex-1 transition-all duration-300
                   ${
                     state === "completed"
-                      ? "bg-green-500/15 border border-green-600/50"
+                      ? "bg-green-500/10 border border-green-500/30"
                       : state === "active"
-                        ? "bg-violet-500/10 border border-violet-500/50"
-                        : "bg-gray-800/50 border border-gray-700"
+                        ? "bg-[var(--violet-soft-bg)] border border-[var(--brand-violet)]/50"
+                        : "bg-[var(--surface-elevated)] border border-[var(--border)]"
                   }
                 `}
                 title={stage.description}
               >
-                {/* Active segment fill */}
-                {state === "active" && (
-                  <div className="absolute inset-0 rounded-lg overflow-hidden">
-                    <div className="absolute inset-0 bg-violet-500/5" />
-                  </div>
-                )}
-
                 <div className="relative flex items-center gap-2">
                   {state === "completed" ? (
                     <CheckCircle size={16} className="text-green-400 shrink-0" />
@@ -106,8 +97,8 @@ export default function StageProgressBar({
                       size={16}
                       className={`shrink-0 ${
                         state === "active"
-                          ? "text-violet-300 animate-pulse"
-                          : "text-gray-500"
+                          ? "text-violet-400 animate-pulse"
+                          : "text-[var(--text-muted)]"
                       }`}
                     />
                   )}
@@ -117,7 +108,7 @@ export default function StageProgressBar({
                         ? "text-green-400"
                         : state === "active"
                           ? "text-violet-300"
-                          : "text-gray-500"
+                          : "text-[var(--text-muted)]"
                     }`}
                   >
                     {stage.label}
@@ -125,9 +116,8 @@ export default function StageProgressBar({
                 </div>
               </div>
 
-              {/* Connector arrow between segments */}
               {idx < stages.length - 1 && (
-                <div className="mx-1 text-gray-600 shrink-0">
+                <div className="mx-1 text-[var(--text-muted)] shrink-0">
                   <svg width="12" height="12" viewBox="0 0 12 12">
                     <path
                       d="M2 6h8M7 3l3 3-3 3"
@@ -144,10 +134,9 @@ export default function StageProgressBar({
           );
         })}
 
-        {/* Intervention segment */}
         {showIntervention && (
           <>
-            <div className="mx-1 text-gray-600 shrink-0">
+            <div className="mx-1 text-[var(--text-muted)] shrink-0">
               <svg width="12" height="12" viewBox="0 0 12 12">
                 <path
                   d="M2 6h8M7 3l3 3-3 3"
@@ -159,15 +148,33 @@ export default function StageProgressBar({
                 />
               </svg>
             </div>
-            <div className="relative flex items-center gap-2 px-3 py-2 rounded-lg bg-yellow-500/15 border border-yellow-500/50 animate-pulse">
-              <Hand size={16} className="text-yellow-400 shrink-0" />
-              <span className="text-xs font-medium text-yellow-300 whitespace-nowrap">
-                Your Turn
+            <div className="relative flex items-center gap-2 px-3 py-2 rounded-lg bg-amber-500/10 border border-amber-500/30 animate-pulse">
+              <Hand size={16} className="text-amber-400 shrink-0" />
+              <span className="text-xs font-medium text-amber-300 whitespace-nowrap">
+                Your turn
               </span>
             </div>
           </>
         )}
       </div>
     </div>
+  );
+}
+
+function Loader({ size, className }: { size: number; className?: string }) {
+  return (
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={className}
+    >
+      <path d="M21 12a9 9 0 1 1-6.219-8.56" />
+    </svg>
   );
 }

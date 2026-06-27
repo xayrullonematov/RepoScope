@@ -22,13 +22,13 @@ export default function EmptyState({
     <div className={`flex h-full items-center justify-center p-8 ${className}`}>
       <div className="text-center max-w-sm">
         {Icon && (
-          <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full border border-gray-700 bg-gray-800/70 text-gray-400">
+          <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full border border-[var(--border)] bg-[var(--surface-elevated)] text-[var(--text-muted)]">
             <Icon size={22} />
           </div>
         )}
-        <h3 className="text-sm font-medium text-gray-200">{title}</h3>
+        <h3 className="text-sm font-medium text-[var(--text-primary)]">{title}</h3>
         {description && (
-          <div className="mt-1 text-xs leading-relaxed text-gray-500">{description}</div>
+          <div className="mt-1.5 text-xs leading-relaxed text-[var(--text-muted)]">{description}</div>
         )}
         {action && <div className="mt-4 flex justify-center">{action}</div>}
       </div>

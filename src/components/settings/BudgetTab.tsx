@@ -41,7 +41,7 @@ function BudgetForm({ initial, update }: BudgetFormProps) {
   return (
     <FormShell
       title="Budget & sampling"
-      description="These apply to new sessions and most agent calls. Per-session overrides can still be set when creating a session."
+      description="These apply to new reviews and most AI calls. Per-review overrides can still be set when starting a review."
       saving={saving}
       error={saveError}
       footer="Lower temperature → more deterministic. Lower max tokens → cheaper but truncated responses."
@@ -65,7 +65,7 @@ function BudgetForm({ initial, update }: BudgetFormProps) {
         } else {
           const parsed = Number(trimmed);
           if (!Number.isFinite(parsed) || parsed <= 0 || !Number.isInteger(parsed)) {
-            setSaveError("Default token budget must be a positive integer or left blank.");
+            setSaveError("Default usage limit must be a positive integer or left blank.");
             return;
           }
           budgetValue = parsed;
@@ -126,9 +126,9 @@ function BudgetForm({ initial, update }: BudgetFormProps) {
       </Field>
 
       <Field
-        label="Default token budget per session"
+        label="Default usage limit per review"
         htmlFor="budget-default"
-        hint="Blank means unlimited. New sessions get this when no explicit budget is provided."
+        hint="Blank means no limit. New reviews get this when no explicit limit is provided."
       >
         <input
           id="budget-default"

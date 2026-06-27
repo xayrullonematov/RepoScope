@@ -34,10 +34,10 @@ interface DebateChatProps {
 const relevantEventTypes = ["proposal", "critique", "revision", "consensus-update"];
 
 const stageLabels: Record<string, string> = {
-  proposal: "Proposal Stage",
-  critique: "Critique Stage",
-  revision: "Revision Stage",
-  consensus: "Consensus Stage",
+  proposal: "Reading code",
+  critique: "Checking findings",
+  revision: "Refining results",
+  consensus: "Building report",
 };
 
 function mapEventToMessageType(
@@ -157,7 +157,7 @@ export default function DebateChat({
         {isLiveRound ? (
           <div className="flex-1 overflow-y-auto px-4 py-4 space-y-3">
             <p className="text-sm font-medium uppercase tracking-wide text-gray-400">
-              Agents are analyzing — pass {selectedRound}…
+              AI reviewers are analyzing — pass {selectedRound}…
             </p>
             {ALL_AGENTS.map((agentId) => (
               <div
@@ -177,8 +177,8 @@ export default function DebateChat({
         ) : (
           <EmptyState
             icon={MessageSquare}
-            title={`No agent messages yet for pass ${selectedRound}.`}
-            description="Messages appear here as agents analyze your repo. Start a review pass to begin."
+            title={`No activity yet for pass ${selectedRound}.`}
+            description="Activity appears here as AI reviewers analyze your repo."
           />
         )}
       </div>
@@ -303,7 +303,7 @@ function LiveAgentProgress({
   return (
     <div className="mt-2 rounded-lg border border-dashed border-gray-700 bg-gray-900/30 p-3">
       <p className="text-xs uppercase tracking-wide text-gray-400 mb-2">
-        Waiting on {pending.length} {pending.length === 1 ? "agent" : "agents"}
+        Waiting on {pending.length} {pending.length === 1 ? "reviewer" : "reviewers"}
       </p>
       <div className="space-y-1.5">
         {pending.map((agentId) => (
@@ -347,7 +347,7 @@ function RoundSelector({
       >
         {availableRounds.map((round) => (
           <option key={round} value={round}>
-            Round {round}{round === currentRound ? " (current)" : ""}
+            Pass {round}{round === currentRound ? " (current)" : ""}
           </option>
         ))}
       </select>
@@ -356,7 +356,7 @@ function RoundSelector({
           onClick={() => onRoundChange(currentRound)}
           className="min-h-10 text-sm text-blue-300 hover:text-blue-200 transition-colors ml-1"
         >
-          Back to current
+          Jump to latest
         </button>
       )}
     </div>

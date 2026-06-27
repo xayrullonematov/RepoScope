@@ -72,15 +72,15 @@ export default function ClarificationPanel({ sessionId, events, currentRound }: 
       });
       if (!intRes.ok) {
         const body = (await intRes.json().catch(() => ({}))) as { error?: string };
-        throw new Error(body.error ?? "Couldn't send your reply. Please try again.");
+        throw new Error(body.error ?? "Couldn't continue the review. Please try again.");
       }
       const advRes = await fetch(`/api/sessions/${sessionId}/advance`, { method: "POST" });
       if (!advRes.ok) {
         const body = (await advRes.json().catch(() => ({}))) as { error?: string };
-        throw new Error(body.error ?? "Couldn't resume the round. Please try again.");
+        throw new Error(body.error ?? "Couldn't continue the review. Please try again.");
       }
       setReply("");
-      toast.success({ message: "Clarification sent", description: "The round will resume shortly." });
+      toast.success({ message: "Clarification sent", description: "The review will continue shortly." });
     } catch (err) {
       toast.error({
         message: "Couldn't send clarification",
@@ -97,9 +97,9 @@ export default function ClarificationPanel({ sessionId, events, currentRound }: 
       const res = await fetch(`/api/sessions/${sessionId}/advance`, { method: "POST" });
       if (!res.ok) {
         const body = (await res.json().catch(() => ({}))) as { error?: string };
-        throw new Error(body.error ?? "Couldn't resume the session. Please try again.");
+        throw new Error(body.error ?? "Couldn't continue the review. Please try again.");
       }
-      toast.info({ message: "Resuming without clarification" });
+      toast.info({ message: "Continuing review without your answer" });
     } catch (err) {
       toast.error({
         message: "Couldn't resume",
@@ -123,10 +123,10 @@ export default function ClarificationPanel({ sessionId, events, currentRound }: 
         </div>
         <div>
           <h3 className="text-sm font-semibold text-cyan-200">
-            Agents need clarification
+            AI reviewers need clarification
           </h3>
           <p className="text-xs text-cyan-300/80">
-            The round is paused waiting on your answer.
+            The analysis is paused — answer below to continue.
           </p>
         </div>
       </header>
@@ -153,7 +153,7 @@ export default function ClarificationPanel({ sessionId, events, currentRound }: 
             id="clarification-reply"
             value={reply}
             onChange={(e) => setReply(e.target.value)}
-            placeholder="Answer the agents' questions so they can continue the review…"
+            placeholder="Answer these questions so the review can continue…"
             className="mt-1 h-24 w-full resize-none rounded-lg border border-gray-700 bg-gray-900/80 px-3 py-2 text-sm text-gray-100 placeholder-gray-500 focus:border-cyan-500 focus:outline-none focus:ring-2 focus:ring-cyan-500/40"
           />
         </div>
@@ -166,7 +166,7 @@ export default function ClarificationPanel({ sessionId, events, currentRound }: 
             className="inline-flex flex-1 items-center justify-center gap-2 rounded-lg bg-cyan-600 px-4 py-2.5 text-sm font-medium text-white transition-colors hover:bg-cyan-500 disabled:opacity-50"
           >
             {isSubmitting ? <Loader2 size={14} className="animate-spin" /> : <Send size={14} />}
-            Send & resume round
+            Send & continue review
           </button>
           <button
             type="button"

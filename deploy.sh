@@ -28,15 +28,12 @@ if [ ! -f .env ]; then
     exit 1
 fi
 
-# Create certs directory (for HTTPS later)
-mkdir -p certs
-
 # Build and start
 echo "🔨 Building Docker image..."
 docker compose build
 
 echo "📦 Starting services..."
-docker compose up -d
+docker compose up -d --remove-orphans
 
 # Initialize database
 echo "🗄️  Initializing database..."
@@ -46,13 +43,8 @@ sudo DATABASE_URL="file:/var/lib/docker/volumes/movistan_app-data/_data/producti
 echo ""
 echo "✅ Deployed successfully!"
 echo ""
-echo "   App:    http://$(hostname -I | awk '{print $1}')"
+echo "   App:    https://room.myrepo.xyz"
 echo "   Logs:   docker compose logs -f"
 echo "   Stop:   docker compose down"
 echo "   Update: git pull && docker compose up -d --build"
 echo ""
-echo "📌 For HTTPS:"
-echo "   1. Point your domain to this server's IP"
-echo "   2. Place certs in ./certs/ (fullchain.pem + privkey.pem)"
-echo "   3. Uncomment HTTPS block in nginx.conf"
-echo "   4. docker compose restart nginx"

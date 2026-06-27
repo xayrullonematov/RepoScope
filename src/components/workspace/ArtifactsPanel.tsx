@@ -18,7 +18,7 @@ export default function ArtifactsPanel({ artifacts, sessionId, onStatusChange }:
       {artifacts.length === 0 ? (
         <div className="p-6 border border-gray-700 rounded-lg bg-gray-900/30 text-center">
           <p className="text-gray-500 text-sm">
-            No findings yet. Agents will surface them as the analysis progresses.
+            No findings yet. They will appear as the analysis progresses.
           </p>
         </div>
       ) : (
