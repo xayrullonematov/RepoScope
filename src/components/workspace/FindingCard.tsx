@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import {
   AlertTriangle,
   FileText,
@@ -63,16 +63,46 @@ const statusLabels: Record<ArtifactStatus, string> = {
   rejected: "Rejected",
 };
 
+/** Known source file extensions that indicate a real file path. */
+const KNOWN_EXTENSIONS = new Set([
+  "ts", "tsx", "js", "jsx", "mjs", "cjs",
+  "py", "rb", "go", "rs", "java", "kt", "swift",
+  "vue", "svelte", "astro",
+  "css", "scss", "less", "sass",
+  "html", "htm", "xml", "svg",
+  "json", "yaml", "yml", "toml", "env",
+  "md", "mdx", "txt",
+  "sh", "bash", "zsh",
+  "sql", "graphql", "gql",
+  "proto", "prisma",
+  "dockerfile", "makefile",
+  "c", "cpp", "h", "hpp",
+]);
+
 /**
  * Parse a file/location path from the artifact content.
- * Looks for common patterns like file paths with extensions.
+ * Requires either a directory separator (/) in the path, or a recognized
+ * source file extension. This avoids false positives on prose like
+ * "next.js", "v2.0", "e.g.", etc.
  */
 function parseLocation(content: string): string | null {
   // Match file paths like src/foo/bar.ts, ./foo.js, /path/to/file.ext
   const pathMatch = content.match(
-    /(?:^|\s|`)((?:\.{0,2}\/)?(?:[\w@.-]+\/)*[\w@.-]+\.\w{1,10})(?:\s|`|$|,|:)/m
+    /(?:^|\s|`)((?:\.{0,2}\/)?(?:[\w@.-]+\/)*[\w@.-]+\.(\w{1,10}))(?:\s|`|$|,|:)/m
   );
-  if (pathMatch) return pathMatch[1];
+  if (!pathMatch) return null;
+
+  const fullPath = pathMatch[1];
+  const extension = pathMatch[2].toLowerCase();
+
+  // Must contain a directory separator OR have a known source extension
+  const hasDirectorySeparator = fullPath.includes("/");
+  const hasKnownExtension = KNOWN_EXTENSIONS.has(extension);
+
+  if (hasDirectorySeparator || hasKnownExtension) {
+    return fullPath;
+  }
+
   return null;
 }
 
@@ -128,6 +158,19 @@ export default function FindingCard({ artifact, sessionId, onStatusChange }: Fin
   const [showStatusDropdown, setShowStatusDropdown] = useState(false);
   const [isUpdating, setIsUpdating] = useState(false);
   const [optimisticStatus, setOptimisticStatus] = useState<ArtifactStatus | null>(null);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+
+  // Close dropdown on outside click
+  useEffect(() => {
+    if (!showStatusDropdown) return;
+    function handleClickOutside(e: MouseEvent) {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
+        setShowStatusDropdown(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [showStatusDropdown]);
 
   const severity = typeSeverityMap[artifact.type];
   const styles = severityStyles(severity);
@@ -153,11 +196,16 @@ export default function FindingCard({ artifact, sessionId, onStatusChange }: Fin
     setOptimisticStatus(status);
     setIsUpdating(true);
     setShowStatusDropdown(false);
+
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 10_000);
+
     try {
       const res = await fetch(`/api/sessions/${sessionId}/artifacts/${artifact.id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ status }),
+        signal: controller.signal,
       });
       if (!res.ok) {
         const body = (await res.json().catch(() => ({}))) as { error?: string };
@@ -167,11 +215,18 @@ export default function FindingCard({ artifact, sessionId, onStatusChange }: Fin
       setOptimisticStatus(null);
     } catch (err) {
       setOptimisticStatus(previous);
+      const message =
+        err instanceof DOMException && err.name === "AbortError"
+          ? "Request timed out."
+          : err instanceof Error
+            ? err.message
+            : "Network error.";
       toast.error({
         message: "Couldn't update finding",
-        description: err instanceof Error ? err.message : "Network error.",
+        description: message,
       });
     } finally {
+      clearTimeout(timeoutId);
       setIsUpdating(false);
     }
   };
@@ -237,7 +292,7 @@ export default function FindingCard({ artifact, sessionId, onStatusChange }: Fin
           </button>
 
           {effectiveStatus === "draft" && (
-            <div className="relative ml-auto">
+            <div className="relative ml-auto" ref={dropdownRef}>
               <button
                 onClick={() => setShowStatusDropdown(!showStatusDropdown)}
                 disabled={isUpdating}
