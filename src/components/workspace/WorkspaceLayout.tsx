@@ -8,7 +8,6 @@ import {
   Loader2,
   ArrowRight,
   Play,
-  History,
   Filter,
   ChevronDown,
 } from "lucide-react";
@@ -20,7 +19,6 @@ import FindingCard from "./FindingCard";
 import InterventionPanel from "./InterventionPanel";
 import NotificationBanner from "@/components/ui/NotificationBanner";
 import EmptyState from "@/components/ui/EmptyState";
-import StageTransitionToast from "./StageTransitionToast";
 import ClarificationPanel from "./ClarificationPanel";
 import BudgetEditDialog from "./BudgetEditDialog";
 import ExportMenu, { type ExportMenuHandle } from "./ExportMenu";
@@ -30,7 +28,6 @@ import { useEventStream } from "@/hooks/useEventStream";
 import { useKeyboardShortcuts } from "@/hooks/useKeyboardShortcuts";
 import { toast } from "@/hooks/useToast";
 import { FileText } from "lucide-react";
-import Link from "next/link";
 import type { SessionConfig } from "@/types/domain";
 
 interface WorkspaceLayoutProps {
@@ -216,16 +213,6 @@ export default function WorkspaceLayout({ session, mutate }: WorkspaceLayoutProp
             )}
           </div>
           <div className="flex items-center gap-2 sm:gap-3">
-            {session.status === "completed" && (
-              <Link
-                href={`/sessions/${session.id}/replay`}
-                className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 text-xs border border-[var(--border)] rounded-lg text-[var(--text-secondary)] hover:bg-[var(--surface-elevated)] hover:text-[var(--text-primary)] transition-colors"
-                title="Activity log"
-              >
-                <History size={12} />
-                <span>Activity</span>
-              </Link>
-            )}
             {session.consensus && <ExportMenu ref={exportMenuRef} sessionId={session.id} session={session} />}
             {activeTab === "technical" && !isEmptyState && session.status !== "completed" && (
               <button
@@ -238,8 +225,6 @@ export default function WorkspaceLayout({ session, mutate }: WorkspaceLayoutProp
           </div>
         </div>
       </header>
-
-      <StageTransitionToast transitions={stageTransitions} />
 
       <AnimatePresence>
         {isAwaitingIntervention && !hasPendingClarification && activeTab === "overview" && (
@@ -432,6 +417,7 @@ export default function WorkspaceLayout({ session, mutate }: WorkspaceLayoutProp
                   totalTokens={totalTokens}
                   budgetCeiling={budgetCeiling}
                   onEditBudget={() => setShowBudgetDialog(true)}
+                  stageTransitions={stageTransitions}
                 />
               )}
             </div>

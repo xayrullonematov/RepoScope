@@ -3,12 +3,14 @@
 import { useState } from "react";
 import { PanelLeftClose, PanelLeftOpen } from "lucide-react";
 import type { SessionState, RoundStage, PersistedEvent, AgentType } from "@/types/domain";
+import type { StageTransition } from "@/hooks/useEventStream";
 import StageProgressBar from "./StageProgressBar";
 import AgentArena from "./AgentArena";
 import AgentStrip from "./AgentStrip";
 import DebateChat from "./DebateChat";
 import TokenBudgetBar from "./TokenBudgetBar";
 import RoundEtaIndicator from "./RoundEtaIndicator";
+import StageTransitionToast from "./StageTransitionToast";
 
 interface TechnicalActivityPanelProps {
   session: SessionState & { tokenBudget?: number | null };
@@ -18,6 +20,7 @@ interface TechnicalActivityPanelProps {
   totalTokens: number;
   budgetCeiling: number;
   onEditBudget: () => void;
+  stageTransitions: StageTransition[];
 }
 
 const stageOrder: RoundStage[] = ["proposal", "critique", "revision", "consensus"];
@@ -30,6 +33,7 @@ export default function TechnicalActivityPanel({
   totalTokens,
   budgetCeiling,
   onEditBudget,
+  stageTransitions,
 }: TechnicalActivityPanelProps) {
   const [agentArenaExpanded, setAgentArenaExpanded] = useState(false);
   const isActiveRound =
@@ -37,6 +41,7 @@ export default function TechnicalActivityPanel({
 
   return (
     <div className="flex h-full min-h-0 overflow-hidden">
+      <StageTransitionToast transitions={stageTransitions} />
       {/* Left Column: Agent Arena */}
       <aside
         className={`hidden shrink-0 flex-col overflow-hidden border-r border-[var(--border)] transition-all duration-200 md:flex ${
