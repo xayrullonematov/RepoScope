@@ -7,7 +7,10 @@ import {
   Copy,
   Check,
   ChevronDown,
+  ExternalLink,
+  CirclePlus,
 } from "lucide-react";
+import { extractFileLink } from "@/lib/github-file-link";
 import type { ArtifactState, ArtifactType, ArtifactStatus } from "@/types/domain";
 import ArtifactDetail from "./ArtifactDetail";
 import { toast } from "@/hooks/useToast";
@@ -15,6 +18,7 @@ import { toast } from "@/hooks/useToast";
 interface FindingCardProps {
   artifact: ArtifactState;
   sessionId: string;
+  repoInfo?: { owner: string; repo: string; branch: string } | null;
   onStatusChange?: () => void;
 }
 
@@ -152,7 +156,37 @@ function buildTaskString(artifact: ArtifactState, severity: SeverityLevel): stri
   return task;
 }
 
-export default function FindingCard({ artifact, sessionId, onStatusChange }: FindingCardProps) {
+/**
+ * Build a pre-filled GitHub new-issue URL from a finding.
+ */
+function buildGitHubIssueUrl(
+  artifact: ArtifactState,
+  severity: SeverityLevel,
+  repo: { owner: string; repo: string; branch: string }
+): string {
+  const location = parseLocation(artifact.content);
+  const fix = parseSuggestedFix(artifact);
+
+  const title = `[${severity}] ${artifact.title}`;
+  const bodyParts = [
+    `**Severity:** ${severity}`,
+    `**Type:** ${artifact.type}`,
+    location ? `**File:** \`${location}\`` : "",
+    "",
+    "## Description",
+    parseWhyItMatters(artifact.content),
+    fix ? `\n## Suggested Fix\n${fix}` : "",
+    "",
+    "---",
+    "*Reported by [Movistan](https://github.com) AI code review*",
+  ].filter(Boolean);
+
+  const body = bodyParts.join("\n");
+  const params = new URLSearchParams({ title, body });
+  return `https://github.com/${repo.owner}/${repo.repo}/issues/new?${params.toString()}`;
+}
+
+export default function FindingCard({ artifact, sessionId, repoInfo, onStatusChange }: FindingCardProps) {
   const [expanded, setExpanded] = useState(false);
   const [copied, setCopied] = useState(false);
   const [showStatusDropdown, setShowStatusDropdown] = useState(false);
@@ -175,6 +209,7 @@ export default function FindingCard({ artifact, sessionId, onStatusChange }: Fin
   const severity = typeSeverityMap[artifact.type];
   const styles = severityStyles(severity);
   const location = parseLocation(artifact.content);
+  const fileLink = extractFileLink(artifact.content, repoInfo);
   const whyItMatters = parseWhyItMatters(artifact.content);
   const suggestedFix = parseSuggestedFix(artifact);
   const effectiveStatus: ArtifactStatus = optimisticStatus ?? artifact.status;
@@ -248,12 +283,25 @@ export default function FindingCard({ artifact, sessionId, onStatusChange }: Fin
           <span className="rounded-md px-1.5 py-0.5 text-xs text-[var(--text-muted)] bg-[var(--surface-elevated)]/50">
             {typeLabels[artifact.type]}
           </span>
-          {location && (
+          {fileLink?.url ? (
+            <a
+              href={fileLink.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              onClick={(e) => e.stopPropagation()}
+              className="inline-flex items-center gap-1 font-mono text-xs text-[var(--brand-violet)] hover:text-[var(--violet-hover)] truncate max-w-[200px] sm:max-w-none transition-colors"
+              title={`Open ${fileLink.display} on GitHub`}
+            >
+              <FileText size={10} className="opacity-60 shrink-0" />
+              {fileLink.display}
+              <ExternalLink size={9} className="opacity-60 shrink-0" />
+            </a>
+          ) : location ? (
             <span className="font-mono text-xs text-[var(--text-muted)] truncate max-w-[200px] sm:max-w-none">
               <FileText size={10} className="inline mr-1 opacity-60" />
               {location}
             </span>
-          )}
+          ) : null}
           <span className={`ml-auto text-xs font-medium ${statusTextColors[effectiveStatus]}`}>
             {statusLabels[effectiveStatus]}
           </span>
@@ -290,6 +338,19 @@ export default function FindingCard({ artifact, sessionId, onStatusChange }: Fin
             {copied ? <Check size={12} className="text-green-400" /> : <Copy size={12} />}
             {copied ? "Copied" : "Copy task"}
           </button>
+
+          {repoInfo && (
+            <a
+              href={buildGitHubIssueUrl(artifact, severity, repoInfo)}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs text-[var(--text-secondary)] border border-[var(--border)] bg-[var(--surface)] hover:bg-[var(--surface-elevated)] transition-colors"
+              title="Create GitHub issue"
+            >
+              <CirclePlus size={12} />
+              Create issue
+            </a>
+          )}
 
           {effectiveStatus === "draft" && (
             <div className="relative ml-auto" ref={dropdownRef}>

@@ -176,8 +176,21 @@ export default function WorkspaceLayout({ session, mutate }: WorkspaceLayoutProp
     if (!autoStartRequested || autoStartAttemptedRef.current || !isEmptyState || startRoundDisabled) return;
     autoStartAttemptedRef.current = true;
     router.replace(`/sessions/${session.id}`, { scroll: false });
-    void handleStartRound();
-  }, [handleStartRound, isEmptyState, router, session.id, startRoundDisabled]);
+    // Auto-start and redirect to summary on completion
+    (async () => {
+      setIsStartingRound(true);
+      try {
+        const res = await fetch(`/api/sessions/${session.id}/rounds`, { method: "POST" });
+        if (res.ok) {
+          mutate?.();
+          router.push(`/sessions/${session.id}/summary`);
+          return;
+        }
+      } catch { /* fall through */ }
+      setIsStartingRound(false);
+      mutate?.();
+    })();
+  }, [handleStartRound, isEmptyState, router, session.id, startRoundDisabled, mutate]);
 
   useKeyboardShortcuts({
     "start-round": () => {
@@ -394,6 +407,7 @@ export default function WorkspaceLayout({ session, mutate }: WorkspaceLayoutProp
                           key={artifact.id}
                           artifact={artifact}
                           sessionId={session.id}
+                          repoInfo={session.config?.githubRepo ?? null}
                           onStatusChange={mutate}
                         />
                       ))}

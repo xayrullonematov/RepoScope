@@ -1,16 +1,14 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
-const DEMO_PASSWORD = process.env.DEMO_PASSWORD ?? "";
 const COOKIE_NAME = "demo_auth";
 
 export function middleware(request: NextRequest) {
-  // Skip if no password configured
-  if (!DEMO_PASSWORD) return NextResponse.next();
-
-  // Skip static assets and the gate page itself
   const { pathname } = request.nextUrl;
+
+  // Always skip API routes, static assets, and the gate page — before any env check
   if (
+    pathname.startsWith("/api/") ||
     pathname.startsWith("/_next") ||
     pathname.startsWith("/favicon") ||
     pathname === "/gate"
@@ -18,10 +16,11 @@ export function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
-  // Handle gate form submission
-  if (pathname === "/api/gate" && request.method === "POST") {
-    return; // Handled by the route
-  }
+  // Read at invocation time, not module-load time, to avoid build-time inlining
+  const DEMO_PASSWORD = process.env.DEMO_PASSWORD ?? "";
+
+  // Skip if no password configured
+  if (!DEMO_PASSWORD) return NextResponse.next();
 
   // Check auth cookie
   const cookie = request.cookies.get(COOKIE_NAME);

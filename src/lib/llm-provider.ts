@@ -114,6 +114,18 @@ function buildOpenAIBody(
     // NOTE: do NOT set response_format when tools are active.
   } else if (request.responseFormat === "json") {
     body.response_format = { type: "json_object" };
+  } else if (
+    request.responseFormat &&
+    typeof request.responseFormat === "object" &&
+    request.responseFormat.type === "json_schema"
+  ) {
+    body.response_format = {
+      type: "json_schema",
+      json_schema: {
+        name: request.responseFormat.name,
+        schema: request.responseFormat.schema,
+      },
+    };
   }
 
   return body;

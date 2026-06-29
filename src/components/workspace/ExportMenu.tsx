@@ -124,12 +124,23 @@ const ExportMenu = forwardRef<ExportMenuHandle, ExportMenuProps>(function Export
     setOpen(false);
   }
 
+  async function handleSharePublic() {
+    await withBusy("public", async () => {
+      const url = `${window.location.origin}/api/sessions/${sessionId}/public`;
+      const ok = await copy(url);
+      if (ok) toast.success({ message: "Copied public report link", description: "Anyone with this link can view the report." });
+      else throw new Error("Clipboard write was blocked");
+    });
+    setOpen(false);
+  }
+
   const items: { id: string; label: string; icon: typeof Download; onClick: () => void }[] = [
+    { id: "public",  label: "Share public report", icon: Link2,    onClick: handleSharePublic },
+    { id: "link",    label: "Copy workspace link",  icon: Link2,    onClick: handleCopyLink },
     { id: "md-dl",   label: "Download Markdown", icon: Download, onClick: handleDownloadMd },
     { id: "json-dl", label: "Download JSON",     icon: Download, onClick: handleDownloadJson },
     { id: "md-copy", label: "Copy Markdown",     icon: FileText, onClick: handleCopyMd },
     { id: "json-copy", label: "Copy JSON",       icon: FileJson, onClick: handleCopyJson },
-    { id: "link",    label: "Copy share link",   icon: Link2,    onClick: handleCopyLink },
   ];
 
   return (

@@ -8,11 +8,13 @@
 
 import { snapshotManager } from "@/lib/snapshot-manager";
 import { tokenBudgetManager } from "@/lib/token-budget-manager";
+import { extractFileLink } from "@/lib/github-file-link";
 import type {
   SessionState,
   ArtifactState,
   SessionTokenUsage,
   AgentType,
+  Severity,
 } from "@/types/domain";
 
 // =============================================================================
@@ -30,10 +32,17 @@ const AGENT_DISPLAY_NAMES: Record<AgentType, string> = {
 // MARKDOWN GENERATION HELPERS
 // =============================================================================
 
-function formatArtifact(artifact: ArtifactState): string {
+function formatArtifact(artifact: ArtifactState, repo?: { owner: string; repo: string; branch: string } | null): string {
   const contributors = artifact.contributors
     .map((id) => AGENT_DISPLAY_NAMES[id] || id)
     .join(", ");
+
+  const fileLink = extractFileLink(artifact.content, repo);
+  const locationLine = fileLink?.url
+    ? `- **Location:** [${fileLink.display}](${fileLink.url})`
+    : fileLink?.display
+      ? `- **Location:** \`${fileLink.display}\``
+      : "";
 
   return [
     `### ${artifact.title}`,
@@ -41,10 +50,11 @@ function formatArtifact(artifact: ArtifactState): string {
     `- **Type:** ${artifact.type}`,
     `- **Status:** ${artifact.status}`,
     `- **Contributors:** ${contributors || "Manual"}`,
+    locationLine,
     "",
     artifact.content,
     "",
-  ].join("\n");
+  ].filter(Boolean).join("\n");
 }
 
 function formatTokenUsage(usage: SessionTokenUsage): string {
@@ -92,6 +102,10 @@ export async function generateSessionExport(
   // Get session state and token usage
   const state: SessionState = await snapshotManager.projectFromSnapshot(sessionId);
   const usage: SessionTokenUsage = await tokenBudgetManager.getSessionUsage(sessionId);
+  const sessionRow = await (await import("@/lib/db")).prisma.session.findUnique({
+    where: { id: sessionId },
+    select: { config: true },
+  });
 
   const title = state.problemDescription.slice(0, 80) || "Untitled Session";
   const sections: string[] = [];
@@ -99,6 +113,44 @@ export async function generateSessionExport(
   // Title
   sections.push(`# Repo Review Report: ${title}`);
   sections.push("");
+
+  // TL;DR verdict
+  if (state.consensus) {
+    const score = state.consensus.overallConfidence > 1
+      ? Math.round(state.consensus.overallConfidence)
+      : Math.round(state.consensus.overallConfidence * 100);
+    const risks = state.consensus.identifiedRisks || [];
+    const highCount = risks.filter((r) => r.severity === "high").length;
+    const medCount = risks.filter((r) => r.severity === "medium").length;
+
+    let verdict: string;
+    if (highCount > 0) verdict = "⛔ Fix before shipping";
+    else if (score >= 80) verdict = "✅ Ready to ship";
+    else if (score >= 60) verdict = "⚠️ Needs attention";
+    else verdict = "❌ Needs significant work";
+
+    const parts = [`Score: ${score}/100`, verdict];
+    if (highCount > 0) parts.push(`${highCount} critical`);
+    if (medCount > 0) parts.push(`${medCount} medium`);
+    parts.push(`${risks.length} total issues`);
+
+    sections.push(`> **${parts.join(" · ")}**`);
+    sections.push("");
+  }
+
+  // Quick Fix Plan (prioritized by severity × confidence)
+  if (state.consensus?.recommendedDecisions?.length) {
+    const decisions = state.consensus.recommendedDecisions;
+    sections.push("## Quick Fix Plan");
+    sections.push("");
+    for (let i = 0; i < decisions.length; i++) {
+      const d = decisions[i];
+      const conf = d.confidence > 1 ? d.confidence : Math.round(d.confidence * 100);
+      sections.push(`${i + 1}. **${d.title}** (${conf}% confidence)`);
+      if (d.description) sections.push(`   ${d.description}`);
+    }
+    sections.push("");
+  }
 
   // Problem Description
   sections.push("## Problem Description");
@@ -116,12 +168,20 @@ export async function generateSessionExport(
     sections.push("");
   }
 
+  // Parse repo info for file links
+  const repoInfo = (() => {
+    try {
+      const config = JSON.parse(sessionRow?.config ?? "{}");
+      return config.githubRepo ?? null;
+    } catch { return null; }
+  })();
+
   // Findings
   if (state.artifacts.length > 0) {
     sections.push("## Findings");
     sections.push("");
     for (const artifact of state.artifacts) {
-      sections.push(formatArtifact(artifact));
+      sections.push(formatArtifact(artifact, repoInfo));
     }
   }
 

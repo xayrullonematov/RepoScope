@@ -6,10 +6,48 @@
  */
 
 import { NextResponse } from "next/server";
+import { cookies } from "next/headers";
 import { prisma } from "@/lib/db";
 import { eventStore } from "@/lib/event-store";
 import { parseGithubUrl, GithubError } from "@/lib/github-fetcher";
 import type { AgentType, SessionConfig } from "@/types/domain";
+
+// =============================================================================
+// FREE TIER GATE
+// =============================================================================
+
+const FREE_TIER_LIMIT = parseInt(process.env.FREE_TIER_LIMIT ?? "5", 10);
+
+/** Returns { allowed, used } based on cookie-tracked monthly usage. */
+async function checkFreeTier(): Promise<{ allowed: boolean; used: number; limit: number }> {
+  if (FREE_TIER_LIMIT <= 0) return { allowed: true, used: 0, limit: 0 }; // disabled
+
+  const jar = await cookies();
+  const raw = jar.get("mv_usage")?.value ?? "";
+  const currentMonth = new Date().toISOString().slice(0, 7); // "2026-06"
+  const [month, countStr] = raw.split(":");
+  const used = month === currentMonth ? parseInt(countStr || "0", 10) : 0;
+
+  return { allowed: used < FREE_TIER_LIMIT, used, limit: FREE_TIER_LIMIT };
+}
+
+/** Increment the usage counter cookie. */
+async function incrementUsage(): Promise<void> {
+  if (FREE_TIER_LIMIT <= 0) return;
+
+  const jar = await cookies();
+  const currentMonth = new Date().toISOString().slice(0, 7);
+  const raw = jar.get("mv_usage")?.value ?? "";
+  const [month, countStr] = raw.split(":");
+  const used = month === currentMonth ? parseInt(countStr || "0", 10) : 0;
+
+  jar.set("mv_usage", `${currentMonth}:${used + 1}`, {
+    httpOnly: true,
+    sameSite: "lax",
+    maxAge: 60 * 60 * 24 * 35, // ~35 days
+    path: "/",
+  });
+}
 
 // =============================================================================
 // ALL AGENTS (for initial state response)
@@ -36,6 +74,20 @@ const ALL_AGENTS: {
 
 export async function POST(request: Request) {
   try {
+    // Free tier gate
+    const tier = await checkFreeTier();
+    if (!tier.allowed) {
+      return NextResponse.json(
+        {
+          error: "Free tier limit reached",
+          message: `You've used ${tier.used}/${tier.limit} free analyses this month. Upgrade for unlimited access.`,
+          used: tier.used,
+          limit: tier.limit,
+        },
+        { status: 429 }
+      );
+    }
+
     const body = (await request.json()) as {
       problemDescription: string;
       constraints?: { text: string; category?: string }[];
@@ -141,6 +193,8 @@ export async function POST(request: Request) {
       }
     }
 
+    await incrementUsage();
+
     return NextResponse.json(
       {
         sessionId: session.id,
@@ -172,6 +226,7 @@ export async function GET() {
         status: true,
         currentRound: true,
         createdAt: true,
+        _count: { select: { artifacts: true } },
       },
     });
 
@@ -182,6 +237,7 @@ export async function GET() {
         status: s.status,
         currentRound: s.currentRound,
         createdAt: s.createdAt.toISOString(),
+        artifactCount: s._count.artifacts,
       })),
     });
   } catch (error) {

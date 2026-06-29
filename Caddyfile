@@ -2,3 +2,8 @@ room.myrepo.xyz {
 	encode zstd gzip
 	reverse_proxy app:3000
 }
+
+hamma.myrepo.xyz {
+	encode zstd gzip
+	reverse_proxy hamma-website:3000
+}

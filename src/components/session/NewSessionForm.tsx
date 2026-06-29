@@ -101,6 +101,9 @@ export default function NewSessionForm({ githubRepo: controlledRepo, onGithubRep
 
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
+        if (res.status === 429 && data.limit) {
+          throw new Error(`You've used all ${data.limit} free analyses this month. Upgrade for unlimited reviews.`);
+        }
         throw new Error(data.error || "Failed to create session");
       }
 

@@ -14,14 +14,18 @@ import {
   ShieldAlert,
   RotateCcw,
   Plus,
+  FileText,
+  ExternalLink,
 } from "lucide-react";
-import type { SessionState, SessionConfig, AgentType, Severity } from "@/types/domain";
+import { extractFileLink } from "@/lib/github-file-link";
+import type { SessionState, SessionConfig, AgentType, Severity, ArtifactState } from "@/types/domain";
 import Skeleton from "@/components/ui/Skeleton";
 import { toast } from "@/hooks/useToast";
 
 interface ResultsDashboardProps {
   session: SessionState;
   config?: SessionConfig;
+  demotedArtifacts?: ArtifactState[];
   onExport?: () => void;
   loading?: boolean;
 }
@@ -125,6 +129,7 @@ function ScoreRing({ score, size = 64 }: { score: number; size?: number }) {
 export default function ResultsDashboard({
   session,
   config,
+  demotedArtifacts = [],
   onExport,
   loading = false,
 }: ResultsDashboardProps) {
@@ -132,6 +137,7 @@ export default function ResultsDashboard({
   const [showAllDecisions, setShowAllDecisions] = useState(false);
   const [showAllRisks, setShowAllRisks] = useState(false);
   const [showAllAgreements, setShowAllAgreements] = useState(false);
+  const [showDemoted, setShowDemoted] = useState(false);
 
   if (loading) return <ResultsDashboardSkeleton />;
 
@@ -312,6 +318,22 @@ export default function ResultsDashboard({
                   </span>
                 </div>
                 <p className="text-sm text-[var(--text-primary)] leading-relaxed">{risk.description}</p>
+                {(() => {
+                  const link = extractFileLink(risk.description, config?.githubRepo);
+                  if (!link?.url) return null;
+                  return (
+                    <a
+                      href={link.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="mt-1.5 inline-flex items-center gap-1 font-mono text-xs text-[var(--brand-violet)] hover:text-[var(--violet-hover)] transition-colors"
+                    >
+                      <FileText size={10} className="opacity-60" />
+                      {link.display}
+                      <ExternalLink size={9} className="opacity-60" />
+                    </a>
+                  );
+                })()}
               </div>
             ))}
           </div>
@@ -409,6 +431,32 @@ export default function ResultsDashboard({
               {showAllAgreements ? <ChevronUp size={12} /> : <ChevronDown size={12} />}
               {showAllAgreements ? "Show less" : `Show all ${agreements.length}`}
             </button>
+          )}
+        </section>
+      )}
+
+      {/* ─── Demoted Findings (lower confidence) ─────────────────────────── */}
+      {demotedArtifacts.length > 0 && (
+        <section>
+          <button
+            onClick={() => setShowDemoted(!showDemoted)}
+            className="flex items-center gap-2 text-xs text-[var(--text-muted)] hover:text-[var(--text-secondary)] transition-colors"
+          >
+            {showDemoted ? <ChevronUp size={12} /> : <ChevronDown size={12} />}
+            {showDemoted ? "Hide" : "Show"} {demotedArtifacts.length} lower-confidence finding{demotedArtifacts.length > 1 ? "s" : ""}
+          </button>
+          {showDemoted && (
+            <div className="mt-2 space-y-1.5">
+              {demotedArtifacts.map((a, i) => (
+                <div key={i} className="rounded-lg border border-[var(--border)] bg-[var(--surface)] px-4 py-2.5 opacity-70">
+                  <div className="flex items-center gap-2 mb-1">
+                    <span className="text-xs font-mono text-[var(--text-muted)] uppercase">{a.type}</span>
+                  </div>
+                  <p className="text-sm text-[var(--text-primary)]">{a.title}</p>
+                  <p className="mt-1 text-xs text-[var(--text-muted)] line-clamp-2">{a.content}</p>
+                </div>
+              ))}
+            </div>
           )}
         </section>
       )}

@@ -1,7 +1,9 @@
 import { NextResponse } from "next/server";
 import { artifactStore } from "@/lib/artifact-store";
+import { eventStore } from "@/lib/event-store";
 import { snapshotManager } from "@/lib/snapshot-manager";
 import { tokenBudgetManager } from "@/lib/token-budget-manager";
+import { filterFindings } from "@/lib/finding-filter";
 import type { ArtifactState } from "@/types/domain";
 
 export async function GET(
@@ -14,6 +16,16 @@ export async function GET(
     const artifacts = await artifactStore.getSessionArtifacts(sessionId);
     const usage = await tokenBudgetManager.getSessionUsage(sessionId);
 
+    // Get round events for confidence-weighted filtering
+    const roundEvents = state.currentRound > 0
+      ? await eventStore.getRoundEvents(sessionId, state.currentRound)
+      : [];
+
+    // Apply confidence-weighted filter
+    const scored = filterFindings(artifacts, state.consensus, roundEvents);
+    const promoted = scored.filter((f) => !f.demoted).map((f) => f.artifact);
+    const demoted = scored.filter((f) => f.demoted).map((f) => f.artifact);
+
     const grouped: Record<string, ArtifactState[]> = {
       decision: [],
       risk: [],
@@ -23,7 +35,7 @@ export async function GET(
       recommendation: [],
     };
 
-    for (const a of artifacts) {
+    for (const a of promoted) {
       if (a.type in grouped) {
         grouped[a.type].push(a);
       }
@@ -39,10 +51,13 @@ export async function GET(
       },
       consensus: state.consensus ?? null,
       artifacts: grouped,
+      demotedArtifacts: demoted,
       summary: {
         roundCount: state.currentRound,
-        artifactCount: artifacts.length,
-        acceptedCount: artifacts.filter((a) => a.status === "accepted").length,
+        artifactCount: promoted.length,
+        totalArtifactCount: artifacts.length,
+        demotedCount: demoted.length,
+        acceptedCount: promoted.filter((a) => a.status === "accepted").length,
       },
     });
   } catch (error) {

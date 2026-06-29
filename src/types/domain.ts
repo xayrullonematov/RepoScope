@@ -552,7 +552,7 @@ export interface LLMRequest {
   userMessage: string;
   temperature?: number;
   maxTokens?: number;
-  responseFormat?: "json";
+  responseFormat?: "json" | { type: "json_schema"; schema: Record<string, unknown>; name: string };
   /**
    * Optional structured split: the portion of the system prompt that is
    * identical across all stages for a given agent (identity + objective +

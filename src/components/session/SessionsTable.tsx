@@ -14,6 +14,7 @@ interface SessionSummary {
   status: "active" | "paused" | "completed";
   currentRound: number;
   createdAt: string;
+  artifactCount?: number;
 }
 
 interface SessionsTableProps {
@@ -24,6 +25,40 @@ interface SessionsTableProps {
 type SortKey = "createdAt" | "round" | "status" | "title";
 type SortDir = "asc" | "desc";
 type StatusFilter = "all" | "active" | "paused" | "completed";
+
+/** Extract repo identifier from session title (e.g. "owner/repo — security") */
+function extractRepo(title: string | null): string | null {
+  if (!title) return null;
+  const match = title.match(/^([\w.-]+\/[\w.-]+)/);
+  return match ? match[1] : null;
+}
+
+type Trend = "up" | "down" | "same" | null;
+
+/** Compute trend for each session by comparing artifact count to prior analysis of same repo. */
+function computeTrends(sessions: SessionSummary[]): Map<string, Trend> {
+  const trends = new Map<string, Trend>();
+  // Group by repo, sorted by date desc
+  const byRepo = new Map<string, SessionSummary[]>();
+  for (const s of sessions) {
+    const repo = extractRepo(s.title);
+    if (!repo || s.artifactCount === undefined) continue;
+    if (!byRepo.has(repo)) byRepo.set(repo, []);
+    byRepo.get(repo)!.push(s);
+  }
+  for (const [, group] of byRepo) {
+    const sorted = [...group].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+    for (let i = 0; i < sorted.length; i++) {
+      if (i === sorted.length - 1) { trends.set(sorted[i].id, null); continue; }
+      const current = sorted[i].artifactCount ?? 0;
+      const previous = sorted[i + 1].artifactCount ?? 0;
+      if (current < previous) trends.set(sorted[i].id, "down"); // fewer issues = improving
+      else if (current > previous) trends.set(sorted[i].id, "up"); // more issues = worse
+      else trends.set(sorted[i].id, "same");
+    }
+  }
+  return trends;
+}
 
 function timeAgo(dateStr: string): string {
   const seconds = Math.floor((Date.now() - new Date(dateStr).getTime()) / 1000);
@@ -70,6 +105,7 @@ export default function SessionsTable({ sessions, loading = false }: SessionsTab
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
   const [sortKey, setSortKey] = useState<SortKey>("createdAt");
   const [sortDir, setSortDir] = useState<SortDir>("desc");
+  const trends = useMemo(() => computeTrends(sessions), [sessions]);
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -166,7 +202,7 @@ export default function SessionsTable({ sessions, loading = false }: SessionsTab
           {/* Mobile cards */}
           <div className="space-y-2 sm:hidden">
             {filtered.map((session) => (
-              <ReviewCard key={session.id} session={session} />
+              <ReviewCard key={session.id} session={session} trend={trends.get(session.id) ?? null} />
             ))}
           </div>
 
@@ -206,11 +242,21 @@ export default function SessionsTable({ sessions, loading = false }: SessionsTab
                         <span className="block truncate max-w-md">
                           {(session.title ?? session.problemDescription ?? "Untitled review").slice(0, 100)}
                         </span>
-                        {session.currentRound > 0 && (
-                          <span className="mt-0.5 block text-xs text-[var(--text-muted)]">
-                            {session.currentRound} review pass{session.currentRound !== 1 ? "es" : ""}
-                          </span>
-                        )}
+                        <span className="mt-0.5 flex items-center gap-1.5 text-xs text-[var(--text-muted)]">
+                          {session.currentRound > 0 && (
+                            <span>{session.currentRound} review pass{session.currentRound !== 1 ? "es" : ""}</span>
+                          )}
+                          {trends.get(session.id) === "down" && (
+                            <span className="inline-flex items-center gap-0.5 text-green-400" title="Fewer issues than last analysis">
+                              <ArrowDown size={10} />improving
+                            </span>
+                          )}
+                          {trends.get(session.id) === "up" && (
+                            <span className="inline-flex items-center gap-0.5 text-red-400" title="More issues than last analysis">
+                              <ArrowUp size={10} />regressed
+                            </span>
+                          )}
+                        </span>
                       </Link>
                     </td>
                     <td className="px-3 py-3 text-center">
@@ -244,7 +290,7 @@ export default function SessionsTable({ sessions, loading = false }: SessionsTab
   );
 }
 
-function ReviewCard({ session }: { session: SessionSummary }) {
+function ReviewCard({ session, trend }: { session: SessionSummary; trend: Trend }) {
   const title = (session.title ?? session.problemDescription ?? "Untitled review").slice(0, 120);
   return (
     <Link
@@ -263,6 +309,8 @@ function ReviewCard({ session }: { session: SessionSummary }) {
           </>
         )}
         <span>{timeAgo(session.createdAt)}</span>
+        {trend === "down" && <span className="text-green-400 flex items-center gap-0.5"><ArrowDown size={10} />improving</span>}
+        {trend === "up" && <span className="text-red-400 flex items-center gap-0.5"><ArrowUp size={10} />regressed</span>}
       </div>
       <div className="mt-2.5">
         <span className="inline-flex items-center rounded-md px-2.5 py-1 text-xs font-medium text-violet-300 border border-[var(--brand-violet)]/40 bg-[var(--violet-soft-bg)]">

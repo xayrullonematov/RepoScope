@@ -227,11 +227,11 @@ export const CRITIQUE_ROUTING: CritiqueRouting = {
  *
  * Values are read from env at module load. The fallbacks match `.env.example`.
  */
-const DEFAULT_MODEL = process.env.LLM_MODEL ?? "gpt-4o";
+const DEFAULT_MODEL = process.env.LLM_MODEL ?? "qwen3.5-plus";
 const CRITIQUE_TIER_MODEL =
-  process.env.LLM_MODEL_CRITIQUE_TIER ?? DEFAULT_MODEL;
+  process.env.LLM_MODEL_CRITIQUE_TIER ?? "qwen3-coder-next";
 const SUMMARY_TIER_MODEL =
-  process.env.LLM_MODEL_SUMMARY_TIER ?? CRITIQUE_TIER_MODEL;
+  process.env.LLM_MODEL_SUMMARY_TIER ?? "qwen-turbo";
 
 export const DEFAULT_MODEL_TIERS: ModelTierConfig = {
   proposal: DEFAULT_MODEL,

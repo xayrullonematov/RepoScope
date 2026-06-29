@@ -26,6 +26,31 @@ interface ModelPricing {
 }
 
 const MODEL_PRICING: Record<string, ModelPricing> = {
+  // Qwen (DashScope — primary models)
+  "qwen3.5-plus": {
+    inputPricePerMillion: 0.4,
+    outputPricePerMillion: 2.4,
+  },
+  "qwen3-max": {
+    inputPricePerMillion: 1.2,
+    outputPricePerMillion: 6.0,
+  },
+  "qwen3-coder-plus": {
+    inputPricePerMillion: 0.65,
+    outputPricePerMillion: 3.25,
+  },
+  "qwen3-coder-next": {
+    inputPricePerMillion: 0.07,
+    outputPricePerMillion: 0.3,
+  },
+  "qwen-turbo": {
+    inputPricePerMillion: 0.05,
+    outputPricePerMillion: 0.4,
+  },
+  "qwen-plus": {
+    inputPricePerMillion: 0.4,
+    outputPricePerMillion: 1.2,
+  },
   // OpenAI
   "gpt-4o": {
     inputPricePerMillion: 2.5,
@@ -49,7 +74,7 @@ const MODEL_PRICING: Record<string, ModelPricing> = {
   },
 };
 
-const DEFAULT_MODEL = "gpt-4o";
+const DEFAULT_MODEL = "qwen3.5-plus";
 
 /**
  * Look up pricing for a model. Bedrock inference profile IDs (us./global.

@@ -381,6 +381,58 @@ export const roundOrchestrator: RoundOrchestrator = {
       await roundSummaryService.generateRoundSummary(sessionId, nextRound);
       await workspaceSummaryService.generateSummary(sessionId);
 
+      // --- Finding verification gate: confirm findings reference real code ---
+      const sessionConfig = parseSessionConfig(session.config);
+      if (sessionConfig.githubRepo) {
+        try {
+          const artifacts = await artifactStore.getSessionArtifacts(sessionId);
+          const verifiable = artifacts.filter((a) => a.status !== "rejected");
+          if (verifiable.length > 0) {
+            const { verifyFindings } = await import("@/lib/finding-verifier");
+            const results = await verifyFindings(verifiable, {
+              owner: sessionConfig.githubRepo.owner,
+              repo: sessionConfig.githubRepo.repo,
+              branch: sessionConfig.githubRepo.branch,
+            });
+            // Mark unverified findings by appending a note to their content
+            for (const result of results) {
+              if (!result.verified && result.confidence >= 0.5) {
+                await artifactStore.updateArtifact(result.artifactId, {
+                  content: artifacts.find((a) => a.id === result.artifactId)!.content +
+                    `\n\n---\n⚠️ **Unverified**: ${result.reason}`,
+                  sourceEventId: "",
+                });
+              }
+            }
+          }
+        } catch (e) {
+          // Verification failure must not break the round
+          console.warn("[round-orchestrator] Finding verification failed:", e);
+        }
+      }
+
+      // --- Smart auto-escalation: run another round only if consensus is weak ---
+      const shouldEscalate = (() => {
+        if (nextRound >= 3) return false; // Hard cap at 3 rounds
+        const consensusEvent = allEvents
+          .filter((e) => e.type === "consensus-update" && e.round === nextRound)
+          .pop();
+        if (!consensusEvent) return false;
+        try {
+          const consensus: ConsensusOutput =
+            typeof consensusEvent.content === "string"
+              ? JSON.parse(consensusEvent.content)
+              : (consensusEvent.content as ConsensusOutput);
+          // Escalate when confidence is low or disagreements dominate
+          return (
+            consensus.overallConfidence < 0.6 ||
+            consensus.disagreements.length > consensus.agreements.length
+          );
+        } catch {
+          return false;
+        }
+      })();
+
       // Auto-export session markdown
       try {
         const { markdown, filename } = await generateSessionExport(sessionId);
@@ -391,6 +443,21 @@ export const roundOrchestrator: RoundOrchestrator = {
         console.log(`[export] Written: ${filepath}`);
       } catch {
         // Export failure must not break the round
+      }
+
+      // If escalation warranted, release lock and recursively start next round
+      if (shouldEscalate) {
+        const budgetCheck = await tokenBudgetManager.checkBudget(sessionId);
+        if (!budgetCheck.isOverBudget) {
+          console.log(
+            `[round-orchestrator] Auto-escalating to round ${nextRound + 1} ` +
+              `(low confidence or high disagreement)`
+          );
+          await sessionLock.release(sessionId, lockId);
+          // Recursively start next round (lock is released; startRound will re-acquire)
+          await roundOrchestrator.startRound(sessionId);
+          return; // Skip the finally-release since we already released
+        }
       }
     } finally {
       // Always release the lock

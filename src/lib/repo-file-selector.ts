@@ -157,6 +157,18 @@ export function selectCandidateFiles(
   const tier1: string[] = [];
   const tier2: Array<{ path: string; score: number }> = [];
 
+  // Pre-compute import frequency: files that many other paths reference are
+  // more architecturally significant. We approximate this by counting how
+  // many other paths share a directory prefix (same-module siblings imply
+  // the module is large/important) and checking common "hub" patterns.
+  const dirCount = new Map<string, number>();
+  for (const entry of entries) {
+    const dir = entry.path.includes("/")
+      ? entry.path.slice(0, entry.path.lastIndexOf("/"))
+      : ".";
+    dirCount.set(dir, (dirCount.get(dir) ?? 0) + 1);
+  }
+
   for (const entry of entries) {
     const path = entry.path;
     if (isTierOne(path)) {
@@ -165,7 +177,33 @@ export function selectCandidateFiles(
     }
     const lower = path.toLowerCase();
     const base = basename(path);
-    const score = scorer(path, base, lower);
+    let score = scorer(path, base, lower);
+
+    // --- Universal boosters for large repos ---
+
+    // Entry-point patterns (index files that re-export a module)
+    if (/^index\.(ts|js|tsx|jsx)$/i.test(base)) score += 1;
+
+    // Depth penalty: deeply nested files (4+ levels) are usually less critical
+    const depth = path.split("/").length;
+    if (depth >= 5) score -= 1;
+
+    // Hub directories: files in dirs with many siblings are in important modules
+    const dir = path.includes("/")
+      ? path.slice(0, path.lastIndexOf("/"))
+      : ".";
+    const siblings = dirCount.get(dir) ?? 0;
+    if (siblings >= 8) score += 1; // Large module — likely important
+
+    // Test files are lower priority for review (they verify, not define behavior)
+    if (
+      lower.includes(".test.") ||
+      lower.includes(".spec.") ||
+      lower.includes("__tests__")
+    ) {
+      score -= 2;
+    }
+
     if (score > 0) {
       tier2.push({ path, score });
     }
