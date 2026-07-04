@@ -2,6 +2,9 @@ node_modules/
 .next/
 out/
 dev.db
+test.db
+data/*.db
+tsconfig.tsbuildinfo
 src/generated/
 .env
 .env.local
@@ -15,3 +18,8 @@ build/
 .movistan/
 # Hamma local agent handoff artifacts
 .hamma/
+
+# Kept locally, not published: dev/agent guidance + internal spec
+CLAUDE.md
+AGENTS.md
+.kiro/
