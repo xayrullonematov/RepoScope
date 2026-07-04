@@ -2,8 +2,8 @@ services:
   app:
     build: .
     restart: unless-stopped
-    expose:
-      - "3000"
+    ports:
+      - "127.0.0.1:3001:3000"
     env_file: .env
     volumes:
       - app-data:/app/data
@@ -12,22 +12,6 @@ services:
       - DATABASE_URL=file:./data/production.db
       - HOSTNAME=0.0.0.0
 
-  proxy:
-    image: caddy:2-alpine
-    restart: unless-stopped
-    ports:
-      - "80:80"
-      - "443:443"
-      - "443:443/udp"
-    volumes:
-      - ./Caddyfile:/etc/caddy/Caddyfile:ro
-      - caddy-data:/data
-      - caddy-config:/config
-    depends_on:
-      - app
-
 volumes:
   app-data:
   app-exports:
-  caddy-data:
-  caddy-config:
