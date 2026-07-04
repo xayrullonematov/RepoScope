@@ -38,7 +38,7 @@ docker compose up -d --remove-orphans
 # Initialize database
 echo "🗄️  Initializing database..."
 sleep 3
-sudo DATABASE_URL="file:/var/lib/docker/volumes/movistan_app-data/_data/production.db" env "PATH=$PATH" npx prisma db push 2>/dev/null || echo "   (DB already initialized)"
+sudo DATABASE_URL="file:/var/lib/docker/volumes/reposcope_app-data/_data/production.db" env "PATH=$PATH" npx prisma db push 2>/dev/null || echo "   (DB already initialized)"
 
 echo ""
 echo "✅ Deployed successfully!"

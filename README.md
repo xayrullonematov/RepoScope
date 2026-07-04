@@ -26,6 +26,15 @@ You can start editing the page by modifying `app/page.tsx`. The page auto-update
 
 This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
 
+## Deployment
+
+RepoScope is deployed on **Alibaba Cloud ECS** (Docker / Docker Compose, fronted
+by host Nginx with Let's Encrypt TLS).
+
+- **Live demo:** https://reposcope.myrepo.xyz
+- **Deployment proof:** [`deployment/alibaba-cloud.md`](deployment/alibaba-cloud.md) — platform, commands, and how to verify the server is Alibaba Cloud ECS.
+- **Runtime proof endpoint:** [`/api/deployment-proof`](https://reposcope.myrepo.xyz/api/deployment-proof) returns safe, non-sensitive deployment metadata (no secrets).
+
 ## Learn More
 
 To learn more about Next.js, take a look at the following resources:
