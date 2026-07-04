@@ -7,8 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "test": "vitest run",
-    "comparison": "tsx scripts/run-comparison.ts"
+    "test": "vitest run"
   },
   "dependencies": {
     "@aws-sdk/client-bedrock": "^3.1072.0",
