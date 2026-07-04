@@ -139,9 +139,9 @@ describe("deriveVerdict", () => {
     expect(result.label).toBe("Ready to ship");
   });
 
-  it("returns 'Fix before shipping' for mid-range score without risks", () => {
+  it("returns 'Needs attention' for mid-range score without risks", () => {
     const result = deriveVerdict(65, []);
-    expect(result.label).toBe("Fix before shipping");
+    expect(result.label).toBe("Needs attention");
   });
 
   it("returns 'Needs significant work' for low score", () => {

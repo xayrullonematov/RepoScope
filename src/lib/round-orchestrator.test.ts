@@ -52,7 +52,10 @@ const DEFAULT_SPEC: Spec = {
   proposalConfidence: 0.5,
   critiqueConfidence: 0.5,
   revisionStance: "agree",
-  consensusConfidence: 0.5,
+  // Confident by default (>= 0.6) so a single round comes to rest without the
+  // orchestrator's auto-escalation firing. Tests that exercise escalation set
+  // a low confidence explicitly.
+  consensusConfidence: 0.8,
   clarifyAt: null,
   consensusArtifactOps: [],
   stubDelayMs: 0,
@@ -449,6 +452,50 @@ describe("Round Orchestrator Auto-Advance + Parallel Dispatch (Property 11 / Tas
     expect(session.currentRound).toBe(1);
 
     expect(events.some((e) => e.type === "round-completed")).toBe(true);
+  }, 60_000);
+});
+
+// =============================================================================
+// Auto-Escalation — weak consensus triggers exactly one additional round
+// =============================================================================
+describe("Round Orchestrator Auto-Escalation", () => {
+  it("runs a second round when consensus confidence is low, then stops", async () => {
+    const sessionId = "sess-escalate";
+    await setupSession(sessionId);
+
+    // Low confidence (< 0.6) should trigger a single auto-escalation.
+    currentSpec = { ...DEFAULT_SPEC, consensusConfidence: 0.5 };
+
+    await roundOrchestrator.startRound(sessionId);
+
+    const session = await prisma.session.findUniqueOrThrow({
+      where: { id: sessionId },
+    });
+    // Escalated from round 1 → round 2, then hard-capped (no round 3).
+    expect(session.currentRound).toBe(2);
+    expect(session.currentStage).toBe("awaiting-intervention");
+
+    const events = await eventStore.getSessionEvents(sessionId);
+    const completed = events.filter((e) => e.type === "round-completed");
+    expect(completed.length).toBe(2);
+  }, 60_000);
+
+  it("does not escalate when consensus confidence is high", async () => {
+    const sessionId = "sess-no-escalate";
+    await setupSession(sessionId);
+
+    currentSpec = { ...DEFAULT_SPEC, consensusConfidence: 0.9 };
+
+    await roundOrchestrator.startRound(sessionId);
+
+    const session = await prisma.session.findUniqueOrThrow({
+      where: { id: sessionId },
+    });
+    expect(session.currentRound).toBe(1);
+
+    const events = await eventStore.getSessionEvents(sessionId);
+    const completed = events.filter((e) => e.type === "round-completed");
+    expect(completed.length).toBe(1);
   }, 60_000);
 });
 

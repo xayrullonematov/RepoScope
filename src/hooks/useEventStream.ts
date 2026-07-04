@@ -1,10 +1,12 @@
 "use client";
 
-import { useCallback, useMemo, useRef, useState, useEffect } from "react";
+import { useMemo } from "react";
 import useSWR from "swr";
 import type { AgentType, PersistedEvent, RoundStage } from "@/types/domain";
 
 const fetcher = (url: string) => fetch(url).then((r) => r.json());
+
+const EMPTY_EVENTS: PersistedEvent[] = [];
 
 interface EventStreamResponse {
   events: PersistedEvent[];
@@ -52,38 +54,30 @@ function deriveLastEventByAgent(events: PersistedEvent[]): Partial<Record<AgentT
 }
 
 export function useEventStream(sessionId: string, active: boolean = true) {
-  const [events, setEvents] = useState<PersistedEvent[]>([]);
-  const lastIdRef = useRef<string | null>(null);
-  const eventCountRef = useRef(0);
-
-  // Use SWR for polling with cursor-based incremental fetch
-  const swrKey = sessionId && active
-    ? `/api/sessions/${sessionId}/events${lastIdRef.current ? `?after=${lastIdRef.current}` : ""}`
-    : null;
-
+  // Always fetch the full list via a stable SWR key. The `compare` option keeps
+  // the previous response reference whenever the server's totalCount is
+  // unchanged, so `data.events` stays referentially stable across polls that
+  // returned no new events — the downstream memos below then don't recompute.
+  // This avoids the effect/setState-mirror pattern (and its cascading-render
+  // and ref-in-render lint hazards) entirely.
   const { data, error, isLoading } = useSWR<EventStreamResponse>(
-    // Always fetch full list via SWR key (cursor in ref doesn't work with SWR key stability)
     sessionId && active ? `/api/sessions/${sessionId}/events` : null,
     fetcher,
-    { refreshInterval: active ? 2000 : 0 },
+    {
+      refreshInterval: active ? 2000 : 0,
+      compare: (a, b) => a?.totalCount === b?.totalCount,
+    },
   );
 
-  // Only update events state when totalCount actually changes (avoids unstable references)
-  useEffect(() => {
-    if (!data?.events) return;
-    if (data.totalCount === eventCountRef.current) return;
-    eventCountRef.current = data.totalCount;
-    setEvents(data.events);
-    const last = data.events[data.events.length - 1];
-    if (last) lastIdRef.current = last.id;
-  }, [data]);
+  const events = data?.events ?? EMPTY_EVENTS;
+  const totalCount = data?.totalCount ?? 0;
 
   const stageTransitions = useMemo(() => deriveStageTransitions(events), [events]);
   const lastEventByAgent = useMemo(() => deriveLastEventByAgent(events), [events]);
 
   return {
     events,
-    totalCount: eventCountRef.current,
+    totalCount,
     isLoading,
     error,
     stageTransitions,

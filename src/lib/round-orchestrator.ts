@@ -919,7 +919,11 @@ export const roundOrchestrator: RoundOrchestrator = {
       const config: SessionConfig = session.config
         ? JSON.parse(session.config)
         : {};
-      const policy = config.clarificationPolicy ?? "suppress";
+      // Default "allow" matches the documented contract in domain.ts and the
+      // NewSessionForm, which omits config entirely when the user selects
+      // "allow" (so absence must mean allow, not suppress). Autonomous entry
+      // points (e.g. /api/analyze) set "suppress" explicitly.
+      const policy = config.clarificationPolicy ?? "allow";
 
       // "suppress" or 0 → never pause for clarification
       // number > 0 → pause but cap questions to that count

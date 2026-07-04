@@ -86,6 +86,20 @@ export async function generateSessionExport(
     sections.push("");
   }
 
+  // ─── Review Request ────────────────────────────────────────────────────────
+  // Property 10 (Export Completeness): the export SHALL contain the problem
+  // description and constraints. Emit them verbatim so the report states what
+  // was reviewed and under which constraints.
+  sections.push(`**Review request:** ${state.problemDescription}`);
+  sections.push("");
+  if (state.constraints.length > 0) {
+    sections.push("**Constraints:**");
+    for (const c of state.constraints) {
+      sections.push(`- ${c.text}${c.category ? ` _(${c.category})_` : ""}`);
+    }
+    sections.push("");
+  }
+
   // ─── TL;DR ─────────────────────────────────────────────────────────────────
   const critCount = report.criticalFindings.length;
   const secCount = report.secondaryFindings.length;
@@ -161,6 +175,17 @@ export async function generateSessionExport(
   sections.push("");
   sections.push("*Internal review process — not part of the main report.*");
   sections.push("");
+
+  // All artifacts (Property 10: export SHALL contain every artifact). The
+  // findings above are a synthesized/capped view; this is the complete list.
+  if (state.artifacts.length > 0) {
+    sections.push("### Artifacts");
+    sections.push("");
+    for (const a of state.artifacts) {
+      sections.push(`- **${a.title}** — ${a.type} (${a.status})`);
+    }
+    sections.push("");
+  }
 
   // Debate rounds
   if (state.rounds.length > 0) {
