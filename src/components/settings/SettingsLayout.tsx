@@ -30,7 +30,7 @@ export default function SettingsLayout() {
   const activeMeta = tabs.find((t) => t.id === active)!;
 
   return (
-    <div className="mx-auto flex w-full max-w-6xl flex-col gap-6 px-4 py-6 sm:px-6 lg:py-10">
+    <main id="main-content" className="mx-auto flex w-full max-w-6xl flex-col gap-6 px-4 py-6 sm:px-6 lg:py-10">
       <header>
         <h1 className="text-2xl font-bold text-[var(--text-primary)]">Settings</h1>
         <p className="mt-1 text-sm text-[var(--text-secondary)]">
@@ -41,7 +41,7 @@ export default function SettingsLayout() {
       <div className="flex flex-col gap-6 lg:flex-row">
         <nav
           aria-label="Settings sections"
-          className="flex shrink-0 gap-1 overflow-x-auto rounded-lg border border-[var(--border)] bg-[var(--surface)] p-1 lg:w-56 lg:flex-col lg:overflow-visible lg:p-2"
+          className="grid shrink-0 grid-cols-2 gap-1 rounded-lg border border-[var(--border)] bg-[var(--surface)] p-1 sm:grid-cols-3 lg:flex lg:w-56 lg:flex-col lg:p-2"
         >
           {tabs.map((tab) => {
             const Icon = tab.icon;
@@ -52,9 +52,9 @@ export default function SettingsLayout() {
                 href={`/settings?tab=${tab.id}`}
                 scroll={false}
                 aria-current={isActive ? "page" : undefined}
-                className={`flex items-center gap-2 whitespace-nowrap rounded-md px-3 py-2 text-sm transition-colors ${
+                className={`flex min-h-11 items-center gap-2 whitespace-nowrap rounded-md px-3 py-2 text-sm transition-colors ${
                   isActive
-                    ? "bg-[var(--violet-soft-bg)] text-violet-200"
+                    ? "bg-[var(--violet-soft-bg)] text-brand-text"
                     : "text-[var(--text-secondary)] hover:bg-[var(--surface-elevated)] hover:text-[var(--text-primary)]"
                 }`}
               >
@@ -81,6 +81,6 @@ export default function SettingsLayout() {
           </div>
         </section>
       </div>
-    </div>
+    </main>
   );
 }

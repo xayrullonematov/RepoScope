@@ -41,7 +41,7 @@ export default function ResultsPage({
   }
 
   return (
-    <div className="mx-auto flex h-[calc(100svh-4rem)] max-w-4xl flex-col px-4 py-6 sm:px-6">
+    <main id="main-content" className="mx-auto flex h-[calc(100svh-4rem)] max-w-4xl flex-col px-4 py-6 sm:px-6">
       <Link
         href={`/sessions/${sessionId}`}
         className="inline-flex items-center gap-1 text-sm text-[var(--text-muted)] transition-colors hover:text-[var(--text-primary)]"
@@ -76,6 +76,6 @@ export default function ResultsPage({
           <ResultsDashboard session={data} config={data.config} onExport={handleExport} />
         )}
       </div>
-    </div>
+    </main>
   );
 }

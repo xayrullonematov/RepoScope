@@ -193,6 +193,7 @@ export default function FindingCard({ artifact, sessionId, repoInfo, onStatusCha
   const [isUpdating, setIsUpdating] = useState(false);
   const [optimisticStatus, setOptimisticStatus] = useState<ArtifactStatus | null>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const copiedTimerRef = useRef<ReturnType<typeof setTimeout>>(null);
 
   // Close dropdown on outside click
   useEffect(() => {
@@ -220,7 +221,8 @@ export default function FindingCard({ artifact, sessionId, repoInfo, onStatusCha
     try {
       await navigator.clipboard.writeText(taskStr);
       setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
+      if (copiedTimerRef.current) clearTimeout(copiedTimerRef.current);
+      copiedTimerRef.current = setTimeout(() => setCopied(false), 2000);
     } catch {
       toast.error({ message: "Copy failed", description: "Couldn't copy to clipboard." });
     }

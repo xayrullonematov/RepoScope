@@ -1,9 +1,12 @@
 /**
  * Event Log API Route
  *
- * GET /api/sessions/[sessionId]/events - Get all events for a session
+ * GET /api/sessions/[sessionId]/events - Get events for a session
  *
- * Returns all events ordered by timestamp with total count.
+ * Query params:
+ *   after - event ID cursor; returns only events after this ID
+ *
+ * Returns events ordered by timestamp with total count.
  */
 
 import { NextResponse } from "next/server";
@@ -14,7 +17,7 @@ import { eventStore } from "@/lib/event-store";
 // =============================================================================
 
 export async function GET(
-  _request: Request,
+  request: Request,
   { params }: { params: Promise<{ sessionId: string }> }
 ) {
   try {
@@ -27,8 +30,22 @@ export async function GET(
       );
     }
 
-    // Get all events for session ordered by timestamp
+    const url = new URL(request.url);
+    const afterId = url.searchParams.get("after");
+
     const events = await eventStore.getSessionEvents(sessionId);
+
+    if (afterId) {
+      const idx = events.findIndex((e) => e.id === afterId);
+      if (idx >= 0) {
+        const newEvents = events.slice(idx + 1);
+        return NextResponse.json({
+          events: newEvents,
+          totalCount: events.length,
+          incremental: true,
+        });
+      }
+    }
 
     return NextResponse.json({
       events,

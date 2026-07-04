@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { motion, AnimatePresence } from "framer-motion";
 import type { AgentState, AgentType, PersistedEvent, RoundStage } from "@/types/domain";
 import StanceBadge from "@/components/ui/StanceBadge";
 import ConfidenceBadge from "@/components/ui/ConfidenceBadge";
@@ -78,7 +77,7 @@ export default function AgentCard({
       aria-label={`${agent.displayName} - ${status.label}. ${isExpanded ? "Collapse" : "Expand"} details.`}
       className={`
         border-l-2 bg-gray-800/50 border border-gray-700
-        transition-all duration-200 cursor-pointer hover:bg-gray-800
+        transition-colors duration-200 cursor-pointer hover:bg-gray-800
         ${compact ? "rounded-md" : "rounded-lg"}
         focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/70 focus-visible:ring-offset-1 focus-visible:ring-offset-gray-950
         ${agentBorderColors[agent.id]}
@@ -114,15 +113,11 @@ export default function AgentCard({
         </span>
       </div>
 
-      <AnimatePresence>
-        {isExpanded && (agent.currentPosition || lastEvent) && (
-          <motion.div
-            initial={{ height: 0, opacity: 0 }}
-            animate={{ height: "auto", opacity: 1 }}
-            exit={{ height: 0, opacity: 0 }}
-            transition={{ duration: 0.2 }}
-            className="overflow-hidden"
-          >
+      <div
+        className={`grid transition-[grid-template-rows] duration-200 ${isExpanded && (agent.currentPosition || lastEvent) ? "grid-rows-[1fr]" : "grid-rows-[0fr]"}`}
+      >
+        <div className="overflow-hidden">
+          {(agent.currentPosition || lastEvent) && (
             <div className="px-3 pb-2 pt-1 border-t border-gray-700 space-y-2">
               {lastEvent && (
                 <div className="flex items-center gap-2">
@@ -140,9 +135,9 @@ export default function AgentCard({
                 </p>
               )}
             </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+          )}
+        </div>
+      </div>
     </div>
   );
 }

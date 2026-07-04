@@ -54,8 +54,9 @@ export default function ReviewProgressState({
         </p>
 
         <button
+          type="button"
           onClick={onShowTechnical}
-          className="text-xs text-[var(--brand-violet)] hover:text-[var(--violet-hover)] transition-colors"
+          className="mx-auto min-h-11 px-2 text-xs text-[var(--brand-violet)] transition-colors hover:text-[var(--violet-hover)]"
         >
           Show technical activity
         </button>

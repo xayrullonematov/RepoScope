@@ -1,6 +1,7 @@
 @import "tailwindcss";
 
 :root {
+  color-scheme: dark;
   --background: #07090D;
   --foreground: #F8FAFC;
   --background-end: #0D1117;
@@ -20,10 +21,11 @@
   --surface-elevated: #111827;
   --text-primary: #F8FAFC;
   --text-secondary: #94A3B8;
-  --text-muted: #64748B;
+  --text-muted: #76869B;
 
   /* Brand */
   --brand-violet: #7C3AED;
+  --brand-text: #DDD6FE;
   --violet-hover: #8B5CF6;
   --violet-soft-bg: rgba(124, 58, 237, 0.12);
   --violet-glow: rgba(124, 58, 237, 0.24);
@@ -68,6 +70,7 @@
 
   /* Brand */
   --color-brand-violet: var(--brand-violet);
+  --color-brand-text: var(--brand-text);
   --color-violet-hover: var(--violet-hover);
   --color-violet-soft-bg: var(--violet-soft-bg);
   --color-violet-glow: var(--violet-glow);
@@ -94,12 +97,36 @@ body {
   font-family: var(--font-inter), system-ui, sans-serif;
 }
 
-/* Light theme overrides — opt-in by data-theme="light" on <html>.
-   Most of the UI still uses Tailwind gray-* utility classes that aren't
-   theme-aware yet; this only flips the CSS variable surface so the chrome
-   and any theme-aware components react. Hardcoded utility colors will be
-   migrated incrementally as components opt in. */
+.text-brand-text {
+  color: var(--brand-text);
+}
+
+/* Skip-to-content link: hidden until focused by keyboard. */
+.skip-link {
+  position: absolute;
+  top: 0.5rem;
+  left: 0.5rem;
+  z-index: 100;
+  padding: 0.625rem 1rem;
+  border-radius: 0.5rem;
+  background: var(--brand-violet);
+  color: #ffffff;
+  font-size: 0.875rem;
+  font-weight: 600;
+  box-shadow: 0 0 0 2px var(--violet-glow);
+  transform: translateY(-200%);
+  transition: transform 120ms ease-out;
+}
+
+.skip-link:focus,
+.skip-link:focus-visible {
+  transform: translateY(0);
+  outline: none;
+}
+
+/* Light theme overrides — opt-in by data-theme="light" on <html>. */
 html[data-theme="light"] {
+  color-scheme: light;
   --background: #f9fafb;
   --foreground: #111827;
   --background-end: #eef2f0;
@@ -114,12 +141,31 @@ html[data-theme="light"] {
   --surface-elevated: #f3f4f6;
   --text-primary: #0f172a;
   --text-secondary: #475569;
-  --text-muted: #64748b;
+  --text-muted: #5B687A;
   --brand-violet: #6D28D9;
+  --brand-text: #6D28D9;
   --violet-hover: #7C3AED;
   --violet-soft-bg: rgba(109, 40, 217, 0.08);
   --violet-glow: rgba(109, 40, 217, 0.16);
   --code-blue: #0284C7;
+
+  /*
+   * Compatibility palette for legacy Tailwind gray utilities. Components
+   * historically used the gray scale as semantic foreground/surface tokens,
+   * so reverse that scale in light mode while they migrate to the variables
+   * above. Tailwind v4 utilities resolve these custom properties at runtime.
+   */
+  --color-gray-50: #0f172a;
+  --color-gray-100: #111827;
+  --color-gray-200: #1f2937;
+  --color-gray-300: #334155;
+  --color-gray-400: #475569;
+  --color-gray-500: #64748b;
+  --color-gray-600: #94a3b8;
+  --color-gray-700: #cbd5e1;
+  --color-gray-800: #e2e8f0;
+  --color-gray-900: #f1f5f9;
+  --color-gray-950: #f8fafc;
 }
 
 /* Custom scrollbar for dark mode */
@@ -139,6 +185,18 @@ html[data-theme="light"] {
 
 ::-webkit-scrollbar-thumb:hover {
   background: #6b7280;
+}
+
+html[data-theme="light"] ::-webkit-scrollbar-track {
+  background: #e2e8f0;
+}
+
+html[data-theme="light"] ::-webkit-scrollbar-thumb {
+  background: #94a3b8;
+}
+
+html[data-theme="light"] ::-webkit-scrollbar-thumb:hover {
+  background: #64748b;
 }
 
 /* Markdown prose styling for dark mode */
@@ -210,10 +268,44 @@ html[data-theme="light"] {
   color: #f9fafb;
 }
 
+html[data-theme="light"] .prose-dark {
+  color: #334155;
+}
+
+html[data-theme="light"] .prose-dark h1,
+html[data-theme="light"] .prose-dark h2,
+html[data-theme="light"] .prose-dark h3,
+html[data-theme="light"] .prose-dark h4,
+html[data-theme="light"] .prose-dark strong {
+  color: #0f172a;
+}
+
+html[data-theme="light"] .prose-dark code {
+  background: #e2e8f0;
+  color: #075985;
+}
+
+html[data-theme="light"] .prose-dark pre {
+  border-color: #cbd5e1;
+  background: #f8fafc;
+}
+
+html[data-theme="light"] .prose-dark pre code {
+  color: #1e293b;
+}
+
+html[data-theme="light"] .prose-dark blockquote {
+  color: #475569;
+}
+
+html[data-theme="light"] .prose-dark a {
+  color: #0369a1;
+}
+
 /* Design system keyframe animations */
 @keyframes pulse-glow {
-  0%, 100% { box-shadow: 0 0 0 0 currentColor; }
-  50% { box-shadow: 0 0 20px 4px currentColor; }
+  0%, 100% { opacity: 0; transform: scale(1); }
+  50% { opacity: 0.6; transform: scale(1.15); }
 }
 
 @keyframes flow-dash {
@@ -221,9 +313,8 @@ html[data-theme="light"] {
 }
 
 @keyframes gradient-shift {
-  0% { background-position: 0% 50%; }
-  50% { background-position: 100% 50%; }
-  100% { background-position: 0% 50%; }
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
 }
 
 @keyframes breathe {

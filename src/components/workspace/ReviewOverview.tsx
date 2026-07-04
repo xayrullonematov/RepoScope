@@ -5,6 +5,7 @@ import ReviewSummaryCard from "./ReviewSummaryCard";
 import TopFindingsList from "./TopFindingsList";
 import RecommendedNextSteps from "./RecommendedNextSteps";
 import ReviewProgressState from "./ReviewProgressState";
+import { isRoundActive } from "./workspace-status";
 
 interface ReviewOverviewProps {
   session: SessionState & {
@@ -26,8 +27,7 @@ export default function ReviewOverview({
   onSwitchToTechnical,
 }: ReviewOverviewProps) {
   const hasConsensus = session.consensus !== null;
-  const isActive =
-    session.currentStage !== null && session.currentStage !== "awaiting-intervention";
+  const isActive = isRoundActive(session);
 
   // Show progress state when analysis is running and no consensus yet
   if (isActive && !hasConsensus) {

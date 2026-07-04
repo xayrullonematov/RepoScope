@@ -149,7 +149,8 @@ const ExportMenu = forwardRef<ExportMenuHandle, ExportMenuProps>(function Export
         type="button"
         onClick={() => setOpen((v) => !v)}
         disabled={busy !== null}
-        className="flex items-center gap-1.5 rounded-lg border border-gray-700 bg-gray-800 px-3 py-1.5 text-xs text-gray-300 transition-colors hover:bg-gray-700 hover:text-white disabled:opacity-50"
+        className="flex min-h-11 min-w-11 items-center justify-center gap-1.5 rounded-lg border border-gray-700 bg-gray-800 px-3 py-1.5 text-xs text-gray-300 transition-colors hover:bg-gray-700 hover:text-white disabled:opacity-50"
+        aria-label="Export report"
         aria-haspopup="menu"
         aria-expanded={open}
       >
@@ -172,7 +173,7 @@ const ExportMenu = forwardRef<ExportMenuHandle, ExportMenuProps>(function Export
                 type="button"
                 onClick={item.onClick}
                 disabled={busy !== null}
-                className="flex w-full items-center gap-2 px-3 py-2 text-left text-xs text-gray-200 transition-colors hover:bg-gray-800 disabled:opacity-50"
+                className="flex min-h-11 w-full items-center gap-2 px-3 py-2 text-left text-xs text-gray-200 transition-colors hover:bg-gray-800 disabled:opacity-50"
               >
                 {isBusy ? <Loader2 size={12} className="animate-spin text-gray-400" /> : <Icon size={12} className="text-gray-400" />}
                 {item.label}

@@ -82,6 +82,16 @@ const FILTERED_DIRECTORIES = [
   "vendor/",
   ".cache/",
   "__pycache__/",
+  "generated/",
+  ".generated/",
+  ".turbo/",
+  ".vercel/",
+  ".output/",
+  "storybook-static/",
+  "test/fixtures/",
+  "tests/fixtures/",
+  "__snapshots__/",
+  ".angular/",
 ];
 
 const FILTERED_LOCKFILES = new Set([
@@ -309,6 +319,14 @@ export function shouldKeepPath(path: string): boolean {
   }
   const ext = getExtension(path);
   if (ext && FILTERED_EXTENSIONS.has(ext)) {
+    return false;
+  }
+  // Skip generated type declarations and bundled output
+  const base = basename(path);
+  if (base.endsWith(".d.ts") || base.endsWith(".d.mts") || base.endsWith(".d.cts")) {
+    return false;
+  }
+  if (base.endsWith(".min.js") || base.endsWith(".min.css") || base.endsWith(".bundle.js")) {
     return false;
   }
   return true;

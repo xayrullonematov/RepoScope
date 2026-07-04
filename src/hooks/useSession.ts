@@ -11,18 +11,19 @@ export function useSession(sessionId: string) {
     fetcher,
     {
       refreshInterval: (latestData) => {
-        if (!latestData) return 0;
+        if (!latestData) return 2000;
         const session = latestData as SessionState;
-        // 500ms when stage is executing
+        if (session.status === "completed") return 0;
+        // Fast poll when a stage is actively executing
         if (session.currentStage && session.currentStage !== "awaiting-intervention") {
           return 500;
         }
-        // 2s when round is active
+        // Medium poll when active but between stages
         if (session.status === "active" && session.currentRound > 0) {
           return 2000;
         }
-        // No polling when idle
-        return 0;
+        // Baseline poll so we never miss an external state change
+        return 5000;
       },
     }
   );

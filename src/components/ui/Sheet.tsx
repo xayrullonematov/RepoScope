@@ -102,8 +102,9 @@ export default function Sheet({
               <div className="flex items-center justify-between px-4 pb-3 pt-1 border-b border-gray-800">
                 <h2 className="text-sm font-semibold text-gray-100">{title}</h2>
                 <button
+                  type="button"
                   onClick={() => onOpenChange(false)}
-                  className="rounded-md p-1 text-gray-400 hover:bg-white/10 hover:text-white transition-colors"
+                  className="inline-flex h-11 w-11 items-center justify-center rounded-md text-gray-400 transition-colors hover:bg-white/10 hover:text-white"
                   aria-label="Close"
                 >
                   <X size={16} />

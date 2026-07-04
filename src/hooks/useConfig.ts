@@ -45,34 +45,29 @@ export function useConfig() {
         }
       : undefined;
 
-    try {
-      const next = await mutate(
-        async () => {
-          const res = await fetch("/api/config", {
-            method: "PUT",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(patch),
-          });
-          if (!res.ok) {
-            const body = (await res.json().catch(() => ({}))) as { error?: string };
-            throw new Error(body.error ?? `Save failed with ${res.status}`);
-          }
-          const json = (await res.json()) as ConfigResponse;
-          return json.config;
-        },
-        {
-          optimisticData: optimistic,
-          rollbackOnError: true,
-          revalidate: false,
-          populateCache: true,
-        },
-      );
-      if (!next) throw new Error("Save returned no config");
-      return next;
-    } catch (err) {
-      if (previous) await mutate(previous, { revalidate: false });
-      throw err;
-    }
+    const next = await mutate(
+      async () => {
+        const res = await fetch("/api/config", {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(patch),
+        });
+        if (!res.ok) {
+          const body = (await res.json().catch(() => ({}))) as { error?: string };
+          throw new Error(body.error ?? `Save failed with ${res.status}`);
+        }
+        const json = (await res.json()) as ConfigResponse;
+        return json.config;
+      },
+      {
+        optimisticData: optimistic,
+        rollbackOnError: true,
+        revalidate: false,
+        populateCache: true,
+      },
+    );
+    if (!next) throw new Error("Save returned no config");
+    return next;
   }
 
   return { config: data, isLoading, error, mutate, update };

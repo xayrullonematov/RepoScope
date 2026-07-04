@@ -11,13 +11,11 @@ interface TokenUsageResponse {
   nextRoundEstimate: CostEstimate | null;
 }
 
-export function useTokenUsage(sessionId: string) {
+export function useTokenUsage(sessionId: string, active: boolean = true) {
   const { data, error, isLoading } = useSWR<TokenUsageResponse>(
     sessionId ? `/api/sessions/${sessionId}/token-usage` : null,
     fetcher,
-    {
-      refreshInterval: 5000,
-    }
+    { refreshInterval: active ? 5000 : 0 }
   );
 
   return {

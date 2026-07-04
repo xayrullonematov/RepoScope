@@ -19,13 +19,14 @@ interface ApiSession {
 
 export default function MySessionsPage() {
   const { data, isLoading, error } = useSWR<{ sessions: ApiSession[] }>("/api/sessions", fetcher, {
-    revalidateOnFocus: false,
+    revalidateOnFocus: true,
+    refreshInterval: 10000,
   });
 
   const sessions = data?.sessions ?? [];
 
   return (
-    <main className="mx-auto max-w-5xl px-4 py-10 sm:px-6">
+    <main id="main-content" className="mx-auto max-w-5xl px-4 py-10 sm:px-6">
       <PageHeader
         title="Review history"
         description="Your repo review reports. Click one to see the full report."

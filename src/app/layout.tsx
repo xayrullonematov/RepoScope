@@ -31,6 +31,9 @@ export default async function RootLayout({
   return (
     <html lang="en" data-theme={theme} className={`${inter.variable} ${theme}`}>
       <body className="min-h-screen bg-[var(--background)] text-[var(--foreground)] antialiased">
+        <a href="#main-content" className="skip-link">
+          Skip to main content
+        </a>
         <UserProvider>
           <AppHeader />
           <ErrorBoundary>{children}</ErrorBoundary>

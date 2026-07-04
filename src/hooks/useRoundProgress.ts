@@ -14,13 +14,11 @@ interface RoundProgressResponse {
   events: PersistedEvent[];
 }
 
-export function useRoundProgress(sessionId: string, round: number | null) {
+export function useRoundProgress(sessionId: string, round: number | null, active: boolean = true) {
   const { data, error, isLoading } = useSWR<RoundProgressResponse>(
     sessionId && round ? `/api/sessions/${sessionId}/rounds/${round}` : null,
     fetcher,
-    {
-      refreshInterval: 500,
-    }
+    { refreshInterval: active ? 1000 : 0 }
   );
 
   return {

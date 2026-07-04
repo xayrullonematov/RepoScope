@@ -15,7 +15,7 @@ export default async function SessionReplayPage({ params }: ReplayPageProps) {
   const { sessionId } = await params;
 
   return (
-    <div className="mx-auto max-w-4xl px-4 py-8 sm:px-6">
+    <main id="main-content" className="mx-auto max-w-4xl px-4 py-8 sm:px-6">
       <Link
         href={`/sessions/${sessionId}`}
         className="inline-flex items-center gap-1 text-sm text-[var(--text-muted)] transition-colors hover:text-[var(--text-primary)]"
@@ -34,6 +34,6 @@ export default async function SessionReplayPage({ params }: ReplayPageProps) {
       <div className="mt-6">
         <ReplayScrubber sessionId={sessionId} />
       </div>
-    </div>
+    </main>
   );
 }

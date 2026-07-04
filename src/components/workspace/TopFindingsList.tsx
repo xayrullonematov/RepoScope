@@ -75,8 +75,9 @@ export default function TopFindingsList({ session, onViewAllFindings }: TopFindi
 
       {(risks.length > 3 || session.artifacts.length > 0) && (
         <button
+          type="button"
           onClick={onViewAllFindings}
-          className="mt-3 flex items-center gap-1 text-xs text-[var(--brand-violet)] hover:text-[var(--violet-hover)] transition-colors"
+          className="mt-3 flex min-h-11 items-center gap-1 text-xs text-[var(--brand-violet)] transition-colors hover:text-[var(--violet-hover)]"
         >
           View all findings
           <ChevronRight size={12} />

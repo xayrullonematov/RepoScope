@@ -43,7 +43,7 @@ sudo DATABASE_URL="file:/var/lib/docker/volumes/movistan_app-data/_data/producti
 echo ""
 echo "✅ Deployed successfully!"
 echo ""
-echo "   App:    https://room.myrepo.xyz"
+echo "   App:    https://reposcope.myrepo.xyz"
 echo "   Logs:   docker compose logs -f"
 echo "   Stop:   docker compose down"
 echo "   Update: git pull && docker compose up -d --build"

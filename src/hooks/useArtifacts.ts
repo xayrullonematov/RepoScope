@@ -9,13 +9,11 @@ interface ArtifactsResponse {
   artifacts: ArtifactState[];
 }
 
-export function useArtifacts(sessionId: string) {
+export function useArtifacts(sessionId: string, active: boolean = true) {
   const { data, error, isLoading, mutate } = useSWR<ArtifactsResponse>(
     sessionId ? `/api/sessions/${sessionId}/artifacts` : null,
     fetcher,
-    {
-      refreshInterval: 2000,
-    }
+    { refreshInterval: active ? 2000 : 0 }
   );
 
   return {

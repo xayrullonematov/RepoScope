@@ -22,6 +22,7 @@ import EmptyState from "@/components/ui/EmptyState";
 import ClarificationPanel from "./ClarificationPanel";
 import BudgetEditDialog from "./BudgetEditDialog";
 import ExportMenu, { type ExportMenuHandle } from "./ExportMenu";
+import { isRoundActive } from "./workspace-status";
 import ReviewOverview from "./ReviewOverview";
 import TechnicalActivityPanel from "./TechnicalActivityPanel";
 import { useEventStream } from "@/hooks/useEventStream";
@@ -77,11 +78,21 @@ export default function WorkspaceLayout({ session, mutate }: WorkspaceLayoutProp
     });
   }, [session.wasRecovered, recoveryKey]);
 
-  const { events, stageTransitions, lastEventByAgent } = useEventStream(session.id);
+  const { events, stageTransitions, lastEventByAgent } = useEventStream(session.id, session.status !== "completed");
+
+  // Trigger session re-fetch when stage transitions change (new stage or round completed)
+  const prevTransitionCountRef = useRef(stageTransitions.length);
+  useEffect(() => {
+    if (stageTransitions.length > prevTransitionCountRef.current) {
+      prevTransitionCountRef.current = stageTransitions.length;
+      mutate?.();
+    }
+  }, [stageTransitions.length, mutate]);
 
   const isEmptyState = session.currentRound === 0 && session.artifacts.length === 0 && !session.currentStage;
-  const isActiveRound = session.currentStage !== null && session.currentStage !== "awaiting-intervention";
-  const isAwaitingIntervention = session.currentStage === "awaiting-intervention";
+  const isActiveRound = isRoundActive(session);
+  const isAwaitingIntervention =
+    session.status === "active" && session.currentStage === "awaiting-intervention";
 
   const completedStages = useMemo(() => getCompletedStages(session.currentStage), [session.currentStage]);
 
@@ -144,11 +155,20 @@ export default function WorkspaceLayout({ session, mutate }: WorkspaceLayoutProp
 
   const handleEndSession = async () => {
     if (!window.confirm("End this review? This cannot be undone.")) return;
-    await fetch(`/api/sessions/${session.id}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ status: "completed" }),
-    });
+    try {
+      const res = await fetch(`/api/sessions/${session.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status: "completed" }),
+      });
+      if (!res.ok) {
+        toast.error({ message: "Couldn't end review", description: "Please try again." });
+        return;
+      }
+      mutate?.();
+    } catch {
+      toast.error({ message: "Couldn't end review", description: "Network error. Please try again." });
+    }
   };
 
   const handleExportFromResults = async () => {
@@ -176,21 +196,20 @@ export default function WorkspaceLayout({ session, mutate }: WorkspaceLayoutProp
     if (!autoStartRequested || autoStartAttemptedRef.current || !isEmptyState || startRoundDisabled) return;
     autoStartAttemptedRef.current = true;
     router.replace(`/sessions/${session.id}`, { scroll: false });
-    // Auto-start and redirect to summary on completion
-    (async () => {
-      setIsStartingRound(true);
-      try {
-        const res = await fetch(`/api/sessions/${session.id}/rounds`, { method: "POST" });
+    // Fire-and-forget: start round, let polling pick up progress
+    const controller = new AbortController();
+    setIsStartingRound(true);
+    fetch(`/api/sessions/${session.id}/rounds`, { method: "POST", signal: controller.signal })
+      .then((res) => {
         if (res.ok) {
           mutate?.();
           router.push(`/sessions/${session.id}/summary`);
-          return;
         }
-      } catch { /* fall through */ }
-      setIsStartingRound(false);
-      mutate?.();
-    })();
-  }, [handleStartRound, isEmptyState, router, session.id, startRoundDisabled, mutate]);
+      })
+      .catch(() => { /* aborted or network error */ })
+      .finally(() => setIsStartingRound(false));
+    return () => controller.abort();
+  }, [isEmptyState, router, session.id, startRoundDisabled, mutate]);
 
   useKeyboardShortcuts({
     "start-round": () => {
@@ -209,8 +228,9 @@ export default function WorkspaceLayout({ session, mutate }: WorkspaceLayoutProp
         <div className="flex items-center justify-between">
           <div className="flex min-w-0 items-center gap-2 sm:gap-3">
             <button
+              type="button"
               onClick={() => router.push("/sessions")}
-              className="flex min-h-10 items-center gap-1 text-[var(--text-muted)] hover:text-[var(--text-primary)] text-sm shrink-0 transition-colors"
+              className="flex h-11 w-11 shrink-0 items-center justify-center rounded-md text-sm text-[var(--text-muted)] transition-colors hover:bg-[var(--surface-elevated)] hover:text-[var(--text-primary)]"
               aria-label="Back to reviews"
             >
               <ArrowLeft size={14} />
@@ -230,7 +250,7 @@ export default function WorkspaceLayout({ session, mutate }: WorkspaceLayoutProp
             {activeTab === "technical" && !isEmptyState && session.status !== "completed" && (
               <button
                 onClick={handleEndSession}
-                className="min-h-10 px-3 py-1.5 text-xs text-[var(--text-muted)] hover:text-red-400 transition-colors"
+                className="min-h-11 px-3 py-1.5 text-xs text-[var(--text-muted)] hover:text-red-400 transition-colors"
               >
                 End
               </button>
@@ -262,7 +282,7 @@ export default function WorkspaceLayout({ session, mutate }: WorkspaceLayoutProp
       />
 
       {/* Main Body */}
-      <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
+      <main id="main-content" className="flex-1 flex flex-col min-h-0 overflow-hidden">
         {/* Empty State */}
         {isEmptyState ? (
           <div className="flex-1 flex items-center justify-center p-8">
@@ -308,7 +328,12 @@ export default function WorkspaceLayout({ session, mutate }: WorkspaceLayoutProp
             )}
 
             {/* Tab Content */}
-            <div className="flex-1 min-h-0 overflow-hidden">
+            <div
+              id="workspace-tabpanel"
+              role="tabpanel"
+              aria-label={`${tabs.find((tab) => tab.id === activeTab)?.label ?? "Workspace"} panel`}
+              className="flex-1 min-h-0 overflow-hidden"
+            >
               {activeTab === "overview" && (
                 <ReviewOverview
                   session={session}
@@ -390,7 +415,7 @@ export default function WorkspaceLayout({ session, mutate }: WorkspaceLayoutProp
                               setArtifactTypeFilter("all");
                               setArtifactStatusFilter("all");
                             }}
-                            className="min-h-10 px-3 py-2 text-sm bg-[var(--violet-soft-bg)] border border-[var(--brand-violet)]/40 rounded-lg text-violet-200 hover:bg-[var(--brand-violet)]/20 transition-colors"
+                            className="min-h-10 px-3 py-2 text-sm bg-[var(--violet-soft-bg)] border border-[var(--brand-violet)]/40 rounded-lg text-brand-text hover:bg-[var(--brand-violet)]/20 transition-colors"
                           >
                             Clear filters
                           </button>
@@ -437,7 +462,7 @@ export default function WorkspaceLayout({ session, mutate }: WorkspaceLayoutProp
             </div>
           </>
         )}
-      </div>
+      </main>
 
       {/* Mobile bottom tab bar */}
       {!isEmptyState && (

@@ -87,7 +87,7 @@ export default function KeyboardShortcutsHelpButton() {
       onClick={() => shortcutsHelp.open()}
       aria-label="Keyboard shortcuts"
       title="Keyboard shortcuts (?)"
-      className="rounded-md p-1.5 text-gray-400 transition-colors hover:bg-white/5 hover:text-gray-100"
+      className="inline-flex h-11 w-11 items-center justify-center rounded-md text-gray-400 transition-colors hover:bg-white/5 hover:text-gray-100"
     >
       <Keyboard size={16} />
     </button>

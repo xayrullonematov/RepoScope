@@ -64,7 +64,7 @@ export default function NewSessionForm({ githubRepo: controlledRepo, onGithubRep
   const [constraints, setConstraints] = useState<ConstraintItem[]>([]);
   const [internalRepo, setInternalRepo] = useState("");
   const [priorSessionSummary, setPriorSessionSummary] = useState("");
-  const [clarificationPolicy, setClarificationPolicy] = useState<ClarificationPolicy>("allow");
+  const [clarificationPolicy, setClarificationPolicy] = useState<ClarificationPolicy>("suppress");
   const [showAdvanced, setShowAdvanced] = useState(false);
   const [showPicker, setShowPicker] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -156,7 +156,7 @@ export default function NewSessionForm({ githubRepo: controlledRepo, onGithubRep
                 key={rt.id}
                 type="button"
                 onClick={() => setProblemDescription(rt.problem)}
-                className="min-h-9 rounded-full border border-[var(--border)] bg-[var(--surface-elevated)] px-3 text-xs text-[var(--text-secondary)] transition-colors hover:border-[var(--brand-violet)] hover:bg-[var(--violet-soft-bg)] hover:text-violet-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-violet)]"
+                className="min-h-9 rounded-full border border-[var(--border)] bg-[var(--surface-elevated)] px-3 text-xs text-[var(--text-secondary)] transition-colors hover:border-[var(--brand-violet)] hover:bg-[var(--violet-soft-bg)] hover:text-[var(--brand-text)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-violet)]"
               >
                 {rt.label}
               </button>

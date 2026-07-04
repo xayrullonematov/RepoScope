@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo } from "react";
+import { useCallback, useMemo, useRef, useState, useEffect } from "react";
 import useSWR from "swr";
 import type { AgentType, PersistedEvent, RoundStage } from "@/types/domain";
 
@@ -9,12 +9,12 @@ const fetcher = (url: string) => fetch(url).then((r) => r.json());
 interface EventStreamResponse {
   events: PersistedEvent[];
   totalCount: number;
+  incremental?: boolean;
 }
 
 export interface StageTransition {
   round: number;
   stage: RoundStage;
-  /** Wall-clock timestamp of the earliest event observed for this stage. */
   startedAt: string;
 }
 
@@ -26,7 +26,6 @@ function deriveStageTransitions(events: PersistedEvent[]): StageTransition[] {
     if (seen.has(key)) continue;
     seen.set(key, { round: event.round, stage: event.stage, startedAt: event.timestamp });
   }
-  // Ensure deterministic order: round then stage order.
   const stageOrder: Record<RoundStage, number> = {
     proposal: 0,
     critique: 1,
@@ -52,23 +51,39 @@ function deriveLastEventByAgent(events: PersistedEvent[]): Partial<Record<AgentT
   return map;
 }
 
-export function useEventStream(sessionId: string) {
+export function useEventStream(sessionId: string, active: boolean = true) {
+  const [events, setEvents] = useState<PersistedEvent[]>([]);
+  const lastIdRef = useRef<string | null>(null);
+  const eventCountRef = useRef(0);
+
+  // Use SWR for polling with cursor-based incremental fetch
+  const swrKey = sessionId && active
+    ? `/api/sessions/${sessionId}/events${lastIdRef.current ? `?after=${lastIdRef.current}` : ""}`
+    : null;
+
   const { data, error, isLoading } = useSWR<EventStreamResponse>(
-    sessionId ? `/api/sessions/${sessionId}/events` : null,
+    // Always fetch full list via SWR key (cursor in ref doesn't work with SWR key stability)
+    sessionId && active ? `/api/sessions/${sessionId}/events` : null,
     fetcher,
-    {
-      refreshInterval: 1000,
-    },
+    { refreshInterval: active ? 2000 : 0 },
   );
 
-  const events = useMemo(() => data?.events ?? [], [data]);
+  // Only update events state when totalCount actually changes (avoids unstable references)
+  useEffect(() => {
+    if (!data?.events) return;
+    if (data.totalCount === eventCountRef.current) return;
+    eventCountRef.current = data.totalCount;
+    setEvents(data.events);
+    const last = data.events[data.events.length - 1];
+    if (last) lastIdRef.current = last.id;
+  }, [data]);
 
   const stageTransitions = useMemo(() => deriveStageTransitions(events), [events]);
   const lastEventByAgent = useMemo(() => deriveLastEventByAgent(events), [events]);
 
   return {
     events,
-    totalCount: data?.totalCount ?? 0,
+    totalCount: eventCountRef.current,
     isLoading,
     error,
     stageTransitions,

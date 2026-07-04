@@ -47,7 +47,12 @@ function deriveVerdict(score: number, highRisks: number) {
 
 export default function SummaryPage({ params }: { params: Promise<{ sessionId: string }> }) {
   const { sessionId } = use(params);
-  const { data, isLoading } = useSWR<SummaryData>(`/api/sessions/${sessionId}/results`, fetcher);
+  const { data, isLoading } = useSWR<SummaryData>(`/api/sessions/${sessionId}/results`, fetcher, {
+    refreshInterval: (latestData) => {
+      if (latestData?.consensus) return 0;
+      return 3000;
+    },
+  });
   const [copied, setCopied] = useState(false);
 
   if (isLoading || !data) {
@@ -100,7 +105,7 @@ export default function SummaryPage({ params }: { params: Promise<{ sessionId: s
   const severityBg: Record<Severity, string> = { high: "border-red-500/30 bg-red-500/10", medium: "border-amber-500/30 bg-amber-500/10", low: "border-green-500/30 bg-green-500/10" };
 
   return (
-    <div className="min-h-screen flex items-center justify-center px-4 py-8">
+    <main id="main-content" className="min-h-screen flex items-center justify-center px-4 py-8">
       <div className="w-full max-w-lg space-y-5">
         {/* Score + Verdict */}
         <div className="text-center">
@@ -182,6 +187,6 @@ export default function SummaryPage({ params }: { params: Promise<{ sessionId: s
           </Link>
         </div>
       </div>
-    </div>
+    </main>
   );
 }

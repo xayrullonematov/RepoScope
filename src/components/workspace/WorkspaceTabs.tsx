@@ -1,5 +1,7 @@
 "use client";
 
+import { useRovingTabList } from "./useRovingTabList";
+
 interface Tab {
   id: string;
   label: string;
@@ -17,17 +19,24 @@ export default function WorkspaceTabs({
   onTabChange,
   tabs,
 }: WorkspaceTabsProps) {
+  const getTabProps = useRovingTabList(tabs, activeTab, onTabChange);
+
   return (
-    <div className="flex items-center gap-1 px-3 py-2 sm:px-4">
+    <div
+      role="tablist"
+      aria-label="Workspace tabs"
+      className="flex items-center gap-1 px-3 py-2 sm:px-4"
+    >
       {tabs.map((tab) => (
         <button
           key={tab.id}
-          onClick={() => onTabChange(tab.id)}
+          type="button"
+          {...getTabProps(tab.id)}
           className={`
             px-3 py-1.5 text-xs font-medium rounded-md transition-colors
             ${
               activeTab === tab.id
-                ? "bg-violet-500/15 text-violet-200 border border-violet-500/30"
+                ? "bg-violet-500/15 text-brand-text border border-violet-500/30"
                 : "text-gray-400 hover:text-gray-200 hover:bg-gray-800 border border-transparent"
             }
           `}

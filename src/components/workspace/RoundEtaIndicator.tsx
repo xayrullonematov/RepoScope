@@ -59,11 +59,13 @@ export default function RoundEtaIndicator({
   currentRound,
   currentStage,
 }: RoundEtaIndicatorProps) {
+  const isActive = !!currentStage && currentStage !== "awaiting-intervention";
   const [now, setNow] = useState(() => Date.now());
   useEffect(() => {
+    if (!isActive) return;
     const id = window.setInterval(() => setNow(Date.now()), 3000);
     return () => window.clearInterval(id);
-  }, []);
+  }, [isActive]);
 
   const { etaMs, confidence } = useMemo(() => {
     const durations = deriveRoundDurations(events);
@@ -91,7 +93,7 @@ export default function RoundEtaIndicator({
     return { etaMs: blended, confidence: conf };
   }, [events, currentRound, currentStage, now]);
 
-  if (!currentStage || currentStage === "awaiting-intervention") return null;
+  if (!isActive) return null;
 
   const confColor = {
     high: "text-blue-300",

@@ -45,7 +45,7 @@ export default function SampleReport() {
     <section id="sample-report" className="px-4 py-10 sm:px-6 sm:py-16">
       <div className="mx-auto grid max-w-6xl gap-5 sm:gap-8 lg:grid-cols-[0.85fr_1.15fr] lg:items-center">
         <div className="space-y-3 sm:space-y-4">
-          <div className="inline-flex min-h-9 items-center gap-2 rounded-full border border-violet-500/40 bg-violet-500/10 px-3 text-sm font-medium text-violet-200">
+          <div className="inline-flex min-h-9 items-center gap-2 rounded-full border border-violet-500/40 bg-violet-500/10 px-3 text-sm font-medium text-brand-text">
             <FileCode size={16} />
             Example report
           </div>
@@ -76,7 +76,7 @@ export default function SampleReport() {
                   <AlertTriangle size={14} />
                   3 findings
                 </span>
-                <span className="inline-flex items-center gap-1.5 rounded-md border border-violet-500/50 bg-violet-500/10 px-2.5 py-0.5 text-sm font-medium text-violet-200">
+                <span className="inline-flex items-center gap-1.5 rounded-md border border-violet-500/50 bg-violet-500/10 px-2.5 py-0.5 text-sm font-medium text-brand-text">
                   <TrendingUp size={14} />
                   Score: 6.2/10
                 </span>
@@ -112,7 +112,7 @@ export default function SampleReport() {
             <ol className="space-y-1.5 text-sm text-[var(--text-secondary)]">
               {fixes.map((fix, index) => (
                 <li key={index} className="flex gap-2">
-                  <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full border border-violet-500/50 text-xs text-violet-200">
+                  <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full border border-violet-500/50 text-xs text-brand-text">
                     {index + 1}
                   </span>
                   <span>{fix}</span>

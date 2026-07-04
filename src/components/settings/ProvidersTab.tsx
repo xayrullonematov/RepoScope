@@ -111,7 +111,7 @@ function ProvidersForm({ initial, update }: ProvidersFormProps) {
                 key={preset.id}
                 className={`cursor-pointer rounded-lg border px-3 py-2.5 text-xs transition-colors ${
                   selected
-                    ? "border-blue-500/60 bg-blue-500/10 text-blue-100"
+                    ? "border-[var(--brand-violet)]/60 bg-[var(--violet-soft-bg)] text-brand-text"
                     : "border-gray-800 bg-gray-950/40 text-gray-300 hover:border-gray-700"
                 }`}
               >
@@ -126,7 +126,7 @@ function ProvidersForm({ initial, update }: ProvidersFormProps) {
                   }}
                   className="sr-only"
                 />
-                <div className="font-medium text-gray-100">{preset.label}</div>
+                <div className="font-medium text-[var(--text-primary)]">{preset.label}</div>
                 <div className="mt-1 text-xs leading-snug text-gray-400">{preset.description}</div>
               </label>
             );

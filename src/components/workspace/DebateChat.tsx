@@ -119,10 +119,13 @@ export default function DebateChat({
     [filteredEvents]
   );
 
-  // Auto-scroll to bottom when new messages arrive (only for current round)
+  // Auto-scroll to bottom when new messages arrive (only if user is near bottom)
   useEffect(() => {
-    if (scrollRef.current && selectedRound === currentRound) {
-      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+    const el = scrollRef.current;
+    if (!el || selectedRound !== currentRound) return;
+    const isNearBottom = el.scrollHeight - el.scrollTop - el.clientHeight < 80;
+    if (isNearBottom) {
+      el.scrollTop = el.scrollHeight;
     }
   }, [filteredEvents.length, selectedRound, currentRound]);
 
@@ -201,15 +204,17 @@ export default function DebateChat({
       {filteredEvents.length > 0 && (
         <div className="flex flex-wrap items-center gap-3 px-4 py-2 border-b border-gray-800 shrink-0">
           <button
+            type="button"
             onClick={() => setAllExpanded(allExpanded === true ? false : true)}
-            className="min-h-9 rounded px-2 text-sm text-blue-300 transition-colors hover:text-blue-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/70"
+            className="min-h-11 rounded px-2 text-sm text-blue-300 transition-colors hover:text-blue-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/70"
             aria-label={allExpanded === true ? "Collapse all messages" : "Expand all messages"}
           >
             {allExpanded === true ? "Collapse All" : "Expand All"}
           </button>
           <button
+            type="button"
             onClick={() => setShowDeveloperDetails((value) => !value)}
-            className="min-h-9 rounded px-2 text-sm text-gray-300 transition-colors hover:text-gray-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/70"
+            className="min-h-11 rounded px-2 text-sm text-gray-300 transition-colors hover:text-gray-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/70"
             aria-pressed={showDeveloperDetails}
           >
             {showDeveloperDetails ? "Hide developer details" : "Developer details"}

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   Shield,
@@ -62,6 +62,8 @@ const reviewTypes = [
   },
 ] as const;
 
+type ReviewTypeId = (typeof reviewTypes)[number]["id"];
+
 const sampleFindings = [
   {
     severity: "critical" as const,
@@ -97,10 +99,43 @@ function severityStyles(severity: "critical" | "high" | "medium") {
 export default function Home() {
   const router = useRouter();
   const [repoUrl, setRepoUrl] = useState("");
-  const [selectedType, setSelectedType] = useState("production");
+  const [selectedType, setSelectedType] = useState<ReviewTypeId>("production");
   const [showProcess, setShowProcess] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const reviewTypeRefs = useRef<Partial<Record<ReviewTypeId, HTMLButtonElement | null>>>({});
+
+  const handleReviewTypeKeyDown = (
+    event: React.KeyboardEvent<HTMLButtonElement>,
+    currentId: ReviewTypeId,
+  ) => {
+    const currentIndex = reviewTypes.findIndex(({ id }) => id === currentId);
+    let nextIndex: number;
+
+    switch (event.key) {
+      case "ArrowRight":
+      case "ArrowDown":
+        nextIndex = (currentIndex + 1) % reviewTypes.length;
+        break;
+      case "ArrowLeft":
+      case "ArrowUp":
+        nextIndex = (currentIndex - 1 + reviewTypes.length) % reviewTypes.length;
+        break;
+      case "Home":
+        nextIndex = 0;
+        break;
+      case "End":
+        nextIndex = reviewTypes.length - 1;
+        break;
+      default:
+        return;
+    }
+
+    event.preventDefault();
+    const nextId = reviewTypes[nextIndex].id;
+    setSelectedType(nextId);
+    reviewTypeRefs.current[nextId]?.focus();
+  };
 
   const handleAnalyze = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -141,7 +176,7 @@ export default function Home() {
   };
 
   return (
-    <div className="min-h-screen">
+    <main id="main-content" className="min-h-screen">
       {/* ─── Hero ─── */}
       <section className="flex min-h-[calc(100svh-4rem)] flex-col items-center justify-center px-4 py-16 sm:px-6">
         <div className="mx-auto max-w-3xl space-y-6 text-center">
@@ -184,7 +219,7 @@ export default function Home() {
           <div className="flex flex-col items-center gap-2">
             <a
               href="#sample-report"
-              className="text-sm text-[var(--text-secondary)] underline underline-offset-4 decoration-[var(--border)] hover:text-[var(--text-primary)] transition-colors"
+              className="inline-flex min-h-11 items-center text-sm text-[var(--text-secondary)] underline decoration-[var(--border)] underline-offset-4 transition-colors hover:text-[var(--text-primary)]"
             >
               See sample report
             </a>
@@ -208,10 +243,15 @@ export default function Home() {
             {reviewTypes.map(({ id, label, icon: Icon, desc }) => (
               <button
                 key={id}
+                ref={(node) => {
+                  reviewTypeRefs.current[id] = node;
+                }}
                 type="button"
                 role="radio"
                 aria-checked={selectedType === id}
+                tabIndex={selectedType === id ? 0 : -1}
                 onClick={() => setSelectedType(id)}
+                onKeyDown={(event) => handleReviewTypeKeyDown(event, id)}
                 className={`flex items-start gap-3 rounded-lg border p-4 text-left transition-colors focus:outline-none focus:ring-2 focus:ring-[var(--violet-glow)] ${
                   selectedType === id
                     ? "border-[var(--brand-violet)] bg-[var(--violet-soft-bg)]"
@@ -220,7 +260,7 @@ export default function Home() {
               >
                 <Icon className={`mt-0.5 h-5 w-5 shrink-0 ${selectedType === id ? "text-violet-400" : "text-[var(--text-muted)]"}`} strokeWidth={1.5} />
                 <div>
-                  <span className={`text-sm font-medium ${selectedType === id ? "text-violet-200" : "text-[var(--text-primary)]"}`}>
+                  <span className={`text-sm font-medium ${selectedType === id ? "text-brand-text" : "text-[var(--text-primary)]"}`}>
                     {label}
                   </span>
                   <p className="mt-0.5 text-xs text-[var(--text-muted)]">{desc}</p>
@@ -328,7 +368,7 @@ export default function Home() {
             <button
               type="button"
               onClick={() => setShowProcess(!showProcess)}
-              className="flex items-center gap-1 text-xs text-[var(--text-muted)] hover:text-[var(--text-secondary)] transition-colors mx-auto"
+              className="mx-auto flex min-h-11 items-center gap-1 text-xs text-[var(--text-muted)] transition-colors hover:text-[var(--text-secondary)]"
               aria-expanded={showProcess}
             >
               <ChevronDown className={`h-3 w-3 transition-transform ${showProcess ? "rotate-180" : ""}`} />
@@ -417,6 +457,6 @@ export default function Home() {
           </p>
         </div>
       </footer>
-    </div>
+    </main>
   );
 }

@@ -55,7 +55,7 @@ export async function GET(
       tokenBudgetManager.getSessionUsage(sessionId),
       prisma.session.findUnique({
         where: { id: sessionId },
-        select: { tokenBudget: true, config: true },
+        select: { tokenBudget: true, config: true, status: true },
       }),
       eventStore.getSessionEvents(sessionId),
     ]);
@@ -82,6 +82,7 @@ export async function GET(
 
     return NextResponse.json({
       ...sessionState,
+      status: row?.status ?? sessionState.status,
       tokenUsage,
       tokenBudget: row?.tokenBudget ?? null,
       config,

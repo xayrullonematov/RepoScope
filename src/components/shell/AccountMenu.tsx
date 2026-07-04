@@ -40,9 +40,10 @@ export default function AccountMenu() {
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
+        aria-label={`Open account menu for ${user.displayName}`}
         aria-haspopup="menu"
         aria-expanded={open}
-        className={`flex h-9 w-9 items-center justify-center rounded-full text-sm font-semibold text-white ring-2 ring-offset-2 ring-offset-gray-950 transition-shadow hover:ring-offset-gray-900 ${avatarColor}`}
+        className={`flex h-11 w-11 items-center justify-center rounded-full text-sm font-semibold text-white ring-2 ring-offset-2 ring-offset-gray-950 transition-shadow hover:ring-offset-gray-900 ${avatarColor}`}
       >
         {user.initials}
       </button>
@@ -59,7 +60,7 @@ export default function AccountMenu() {
             href="/sessions"
             role="menuitem"
             onClick={() => setOpen(false)}
-            className="mt-1 flex items-center gap-2 rounded-md px-3 py-2 text-sm text-gray-200 transition-colors hover:bg-white/5"
+            className="mt-1 flex min-h-11 items-center gap-2 rounded-md px-3 py-2 text-sm text-gray-200 transition-colors hover:bg-white/5"
           >
             <User size={14} /> My sessions
           </Link>
@@ -67,7 +68,7 @@ export default function AccountMenu() {
             href="/settings"
             role="menuitem"
             onClick={() => setOpen(false)}
-            className="flex items-center gap-2 rounded-md px-3 py-2 text-sm text-gray-200 transition-colors hover:bg-white/5"
+            className="flex min-h-11 items-center gap-2 rounded-md px-3 py-2 text-sm text-gray-200 transition-colors hover:bg-white/5"
           >
             <Settings size={14} /> Settings
           </Link>

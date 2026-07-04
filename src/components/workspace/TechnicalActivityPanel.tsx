@@ -11,6 +11,7 @@ import DebateChat from "./DebateChat";
 import TokenBudgetBar from "./TokenBudgetBar";
 import RoundEtaIndicator from "./RoundEtaIndicator";
 import StageTransitionToast from "./StageTransitionToast";
+import { isRoundActive } from "./workspace-status";
 
 interface TechnicalActivityPanelProps {
   session: SessionState & { tokenBudget?: number | null };
@@ -36,15 +37,15 @@ export default function TechnicalActivityPanel({
   stageTransitions,
 }: TechnicalActivityPanelProps) {
   const [agentArenaExpanded, setAgentArenaExpanded] = useState(false);
-  const isActiveRound =
-    session.currentStage !== null && session.currentStage !== "awaiting-intervention";
+  const isActiveRound = isRoundActive(session);
+  const effectiveCurrentStage = session.status === "active" ? session.currentStage : null;
 
   return (
     <div className="flex h-full min-h-0 overflow-hidden">
       <StageTransitionToast transitions={stageTransitions} />
       {/* Left Column: Agent Arena */}
       <aside
-        className={`hidden shrink-0 flex-col overflow-hidden border-r border-[var(--border)] transition-all duration-200 md:flex ${
+        className={`hidden shrink-0 flex-col overflow-hidden border-r border-[var(--border)] md:flex ${
           agentArenaExpanded
             ? "md:w-72 lg:w-80 xl:w-[22rem]"
             : "md:w-56 lg:w-56 xl:w-56"
@@ -63,7 +64,7 @@ export default function TechnicalActivityPanel({
         </div>
         <AgentArena
           agents={session.agents}
-          currentStage={session.currentStage}
+          currentStage={effectiveCurrentStage}
           activeAgentId={undefined}
           lastEventByAgent={lastEventByAgent}
           compact={!agentArenaExpanded}
@@ -77,7 +78,7 @@ export default function TechnicalActivityPanel({
         {isActiveRound && (
           <div className="relative shrink-0">
             <StageProgressBar
-              currentStage={session.currentStage}
+              currentStage={effectiveCurrentStage}
               completedStages={completedStages}
               currentRound={session.currentRound}
             />
@@ -85,7 +86,7 @@ export default function TechnicalActivityPanel({
               <RoundEtaIndicator
                 events={events}
                 currentRound={session.currentRound}
-                currentStage={session.currentStage}
+                currentStage={effectiveCurrentStage}
               />
             </div>
           </div>
@@ -95,7 +96,7 @@ export default function TechnicalActivityPanel({
         <div className="md:hidden">
           <AgentStrip
             agents={session.agents}
-            currentStage={session.currentStage}
+            currentStage={effectiveCurrentStage}
             activeAgentId={undefined}
             lastEventByAgent={lastEventByAgent}
           />
@@ -116,7 +117,7 @@ export default function TechnicalActivityPanel({
           <DebateChat
             sessionId={session.id}
             currentRound={session.currentRound}
-            currentStage={session.currentStage}
+            currentStage={effectiveCurrentStage}
           />
         </div>
 

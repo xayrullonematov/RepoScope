@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useSyncExternalStore } from "react";
 import { Moon, Sun, Monitor } from "lucide-react";
 import { toast } from "@/hooks/useToast";
 import { isTheme, THEME_COOKIE, type Theme } from "@/lib/theme";
@@ -20,6 +20,8 @@ function readCookieTheme(): Theme {
   return isTheme(value) ? value : "dark";
 }
 
+const subscribeToTheme = () => () => {};
+
 function applyTheme(theme: Theme) {
   if (typeof document === "undefined") return;
   let resolved: "dark" | "light" = "dark";
@@ -34,7 +36,13 @@ function applyTheme(theme: Theme) {
 }
 
 export default function AppearanceTab() {
-  const [theme, setTheme] = useState<Theme>(() => readCookieTheme());
+  const persistedTheme = useSyncExternalStore<Theme>(
+    subscribeToTheme,
+    readCookieTheme,
+    () => "dark",
+  );
+  const [selectedTheme, setSelectedTheme] = useState<Theme | null>(null);
+  const theme = selectedTheme ?? persistedTheme;
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
@@ -72,7 +80,7 @@ export default function AppearanceTab() {
               key={opt.id}
               className={`cursor-pointer rounded-lg border px-3 py-3 text-xs transition-colors ${
                 selected
-                  ? "border-blue-500/60 bg-blue-500/10 text-blue-100"
+                  ? "border-[var(--brand-violet)]/60 bg-[var(--violet-soft-bg)] text-brand-text"
                   : "border-gray-800 bg-gray-950/40 text-gray-300 hover:border-gray-700"
               }`}
             >
@@ -81,11 +89,11 @@ export default function AppearanceTab() {
                 name="theme"
                 value={opt.id}
                 checked={selected}
-                onChange={() => setTheme(opt.id)}
+                onChange={() => setSelectedTheme(opt.id)}
                 className="sr-only"
               />
-              <div className="flex items-center gap-2 text-gray-100">
-                <Icon size={14} className={selected ? "text-blue-300" : "text-gray-400"} />
+              <div className="flex items-center gap-2 text-[var(--text-primary)]">
+                <Icon size={14} className={selected ? "text-brand-text" : "text-gray-400"} />
                 <span className="font-medium">{opt.label}</span>
               </div>
               <p className="mt-1.5 text-xs leading-snug text-gray-400">{opt.description}</p>

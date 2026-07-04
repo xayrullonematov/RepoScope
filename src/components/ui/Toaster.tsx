@@ -74,18 +74,20 @@ export default function Toaster() {
               </div>
               {t.action && (
                 <button
+                  type="button"
                   onClick={() => {
                     t.action?.onClick();
                     toastApi.dismiss(t.id);
                   }}
-                  className="flex-shrink-0 rounded-md bg-white/10 px-2 py-1 text-xs font-medium text-white transition-colors hover:bg-white/20"
+                  className="min-h-11 flex-shrink-0 rounded-md bg-white/10 px-3 py-1 text-xs font-medium text-white transition-colors hover:bg-white/20"
                 >
                   {t.action.label}
                 </button>
               )}
               <button
+                type="button"
                 onClick={() => toastApi.dismiss(t.id)}
-                className="flex-shrink-0 rounded p-1 text-gray-400 transition-colors hover:bg-white/10 hover:text-white"
+                className="inline-flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-md text-gray-400 transition-colors hover:bg-white/10 hover:text-white"
                 aria-label="Dismiss notification"
               >
                 <X size={14} />

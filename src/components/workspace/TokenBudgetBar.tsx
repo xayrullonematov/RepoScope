@@ -55,8 +55,8 @@ export default function TokenBudgetBar({
       <div className="flex items-center gap-1.5">
         <div className="h-1.5 flex-1 rounded-full bg-gray-800 overflow-hidden">
           <div
-            className={`h-full rounded-full transition-all duration-500 ease-out ${getBarColor(percentage)}`}
-            style={{ width: `${percentage}%` }}
+            className={`h-full w-full rounded-full transition-transform duration-500 ease-out origin-left ${getBarColor(percentage)}`}
+            style={{ transform: `scaleX(${percentage / 100})` }}
           />
         </div>
         {onEditBudget && (
@@ -67,7 +67,7 @@ export default function TokenBudgetBar({
               aria-label="Budget actions"
               aria-haspopup="menu"
               aria-expanded={menuOpen}
-              className="-mr-1 rounded p-0.5 text-gray-500 transition-colors hover:bg-gray-800 hover:text-gray-200"
+              className="-mr-2 inline-flex h-11 w-11 items-center justify-center rounded-md text-gray-500 transition-colors hover:bg-gray-800 hover:text-gray-200"
             >
               <MoreVertical size={12} />
             </button>
@@ -83,7 +83,7 @@ export default function TokenBudgetBar({
                     setMenuOpen(false);
                     onEditBudget();
                   }}
-                  className="w-full px-3 py-1.5 text-left text-xs text-gray-200 transition-colors hover:bg-gray-800"
+                  className="min-h-11 w-full px-3 py-1.5 text-left text-xs text-gray-200 transition-colors hover:bg-gray-800"
                 >
                   Edit budget…
                 </button>

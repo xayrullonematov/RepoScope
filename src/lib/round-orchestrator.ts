@@ -29,6 +29,13 @@ import { projectSessionState } from "@/lib/state-projector";
 import { prisma } from "@/lib/db";
 import { fetchRepoTree, GithubError } from "@/lib/github-fetcher";
 import { selectCandidateFiles } from "@/lib/repo-file-selector";
+import {
+  MAX_ROUNDS,
+  MAX_ARTIFACTS_PER_AGENT,
+  MAX_RAW_FINDINGS,
+  MAX_REVIEW_TIME_MS,
+  BUDGET_STOP_THRESHOLD,
+} from "@/lib/review-limits";
 import type {
   AgentType,
   Constraint,
@@ -125,7 +132,14 @@ async function processArtifactSuggestions(
   let created = 0;
   let updated = 0;
 
-  for (const suggestion of suggestions) {
+  // Cap per-agent suggestions to prevent runaway artifact creation
+  const capped = suggestions.slice(0, MAX_ARTIFACTS_PER_AGENT);
+
+  // Check total artifacts cap
+  const existingCount = await prisma.artifact.count({ where: { sessionId } });
+  if (existingCount >= MAX_RAW_FINDINGS) return { created: 0, updated: 0 };
+
+  for (const suggestion of capped) {
     if (!suggestion.content) {
       console.warn(
         `[orchestrator] Skipping artifact suggestion with undefined content (title="${suggestion.title}", type="${suggestion.type}")`
@@ -289,6 +303,7 @@ export const roundOrchestrator: RoundOrchestrator = {
         where: { id: sessionId },
       });
       const nextRound = session.currentRound + 1;
+      const roundStartTime = Date.now();
 
       // Persist round-started event
       await eventStore.appendEvent({
@@ -312,6 +327,40 @@ export const roundOrchestrator: RoundOrchestrator = {
       const stages: RoundStage[] = ["proposal", "critique", "revision", "consensus"];
 
       for (let i = 0; i < stages.length; i++) {
+        // Time guardrail: stop early if taking too long
+        if (Date.now() - roundStartTime > MAX_REVIEW_TIME_MS) {
+          await prisma.session.update({
+            where: { id: sessionId },
+            data: { status: "completed", currentStage: "awaiting-intervention" },
+          });
+          // Mark as partial via a metadata event
+          await eventStore.appendEvent({
+            sessionId,
+            type: "round-completed",
+            round: nextRound,
+            stage: null,
+            content: { round: nextRound, partial: true, reason: "time_limit" },
+          });
+          return;
+        }
+
+        // Budget guardrail: stop early if close to limit
+        const budgetCheck = await tokenBudgetManager.checkBudget(sessionId);
+        if (budgetCheck.budget !== null && budgetCheck.used >= budgetCheck.budget * BUDGET_STOP_THRESHOLD) {
+          await prisma.session.update({
+            where: { id: sessionId },
+            data: { status: "completed", currentStage: "awaiting-intervention" },
+          });
+          await eventStore.appendEvent({
+            sessionId,
+            type: "round-completed",
+            round: nextRound,
+            stage: null,
+            content: { round: nextRound, partial: true, reason: "budget_limit" },
+          });
+          return;
+        }
+
         // Execute stage
         const stageResult = await roundOrchestrator.executeCurrentStage(sessionId);
 
@@ -413,7 +462,7 @@ export const roundOrchestrator: RoundOrchestrator = {
 
       // --- Smart auto-escalation: run another round only if consensus is weak ---
       const shouldEscalate = (() => {
-        if (nextRound >= 3) return false; // Hard cap at 3 rounds
+        if (nextRound >= 2) return false; // Hard cap at 1 round by default
         const consensusEvent = allEvents
           .filter((e) => e.type === "consensus-update" && e.round === nextRound)
           .pop();
@@ -870,7 +919,7 @@ export const roundOrchestrator: RoundOrchestrator = {
       const config: SessionConfig = session.config
         ? JSON.parse(session.config)
         : {};
-      const policy = config.clarificationPolicy ?? "allow";
+      const policy = config.clarificationPolicy ?? "suppress";
 
       // "suppress" or 0 → never pause for clarification
       // number > 0 → pause but cap questions to that count

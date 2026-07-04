@@ -24,8 +24,8 @@ export default function AgentStrip({
   return (
     <>
       <div
-        role="tablist"
-        aria-label="Agents"
+        role="group"
+        aria-label="AI reviewers"
         className="flex gap-2 overflow-x-auto border-b border-gray-800 bg-gray-950/60 px-3 py-2.5 [scrollbar-width:none] [-ms-overflow-style:none] [&amp;::-webkit-scrollbar]:hidden"
       >
         {agents.map((agent, i) => {
@@ -33,8 +33,9 @@ export default function AgentStrip({
           return (
             <button
               key={agent.id}
-              role="tab"
               type="button"
+              aria-haspopup="dialog"
+              aria-label={`${agent.displayName}: ${status.label}. Open details`}
               onClick={() => setSelectedIdx(i)}
               className="flex shrink-0 items-center gap-2 rounded-full border border-gray-700 bg-gray-800/60 px-3 py-2 text-xs min-h-11 text-gray-200 transition-colors hover:bg-gray-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/70"
             >

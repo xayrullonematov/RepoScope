@@ -1,4 +1,4 @@
-room.myrepo.xyz {
+reposcope.myrepo.xyz {
 	encode zstd gzip
 	reverse_proxy app:3000
 }
@@ -6,4 +6,9 @@ room.myrepo.xyz {
 hamma.myrepo.xyz {
 	encode zstd gzip
 	reverse_proxy hamma-website:3000
+}
+
+perkfit.myrepo.xyz {
+	encode zstd gzip
+	reverse_proxy perkfit-app:3000
 }
