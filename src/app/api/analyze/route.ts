@@ -3,8 +3,8 @@
  *
  * POST /api/analyze
  *
- * Combines session creation + round execution into a single blocking call.
- * Returns the final report JSON when complete.
+ * Creates a session and queues its review without tying execution to the
+ * request lifecycle.
  *
  * Input:  { repoUrl, reviewType?, constraints? }
  * Output: { sessionId, score, verdict, risks, fixes, totalTokens, costUsd }
@@ -13,11 +13,9 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { eventStore } from "@/lib/event-store";
-import { roundOrchestrator } from "@/lib/round-orchestrator";
-import { tokenBudgetManager } from "@/lib/token-budget-manager";
-import { snapshotManager } from "@/lib/snapshot-manager";
+import { enqueueReviewJob } from "@/lib/review-job-queue";
 import { parseGithubUrl, GithubError } from "@/lib/github-fetcher";
-import type { SessionConfig, Severity } from "@/types/domain";
+import type { SessionConfig } from "@/types/domain";
 
 const REVIEW_TYPES: Record<string, string> = {
   security: "Scan this repo for security vulnerabilities: auth bypass, injection flaws, secrets in code, insecure dependencies, and misconfigured permissions. Flag the riskiest files first.",
@@ -100,42 +98,15 @@ export async function POST(request: Request) {
       }
     }
 
-    // Run the analysis (blocking — includes auto-escalation)
-    await roundOrchestrator.startRound(session.id);
-
-    // Collect results
-    const state = await snapshotManager.projectFromSnapshot(session.id);
-    const usage = await tokenBudgetManager.getSessionUsage(session.id);
-    const consensus = state.consensus;
-
-    const score = consensus
-      ? consensus.overallConfidence > 1
-        ? Math.round(consensus.overallConfidence)
-        : Math.round(consensus.overallConfidence * 100)
-      : 0;
-
-    const risks = consensus?.identifiedRisks ?? [];
-    const highCount = risks.filter((r) => r.severity === "high").length;
-
-    let verdict: string;
-    if (highCount > 0) verdict = "fix_before_shipping";
-    else if (score >= 80) verdict = "ready_to_ship";
-    else if (score >= 60) verdict = "needs_attention";
-    else verdict = "needs_significant_work";
-
+    const job = await enqueueReviewJob(session.id);
     return NextResponse.json({
       sessionId: session.id,
+      jobId: job.id,
+      status: job.status,
       repo: `${parsed.owner}/${parsed.repo}`,
-      score,
-      verdict,
-      rounds: state.currentRound,
-      risks: risks.map((r) => ({ description: r.description, severity: r.severity, raisedBy: r.raisedBy })),
-      fixes: (consensus?.recommendedDecisions ?? []).map((d) => ({ title: d.title, description: d.description, confidence: d.confidence })),
-      openQuestions: consensus?.openQuestions ?? [],
-      totalTokens: usage.totalInputTokens + usage.totalOutputTokens,
-      costUsd: parseFloat(usage.estimatedCostUsd.toFixed(4)),
-      reportUrl: `/sessions/${session.id}/summary`,
-    });
+      statusUrl: `/api/sessions/${session.id}`,
+      reportUrl: `/sessions/${session.id}`,
+    }, { status: 202 });
   } catch (error) {
     console.error("POST /api/analyze error:", error);
     const msg = error instanceof Error ? error.message : "Unknown error";

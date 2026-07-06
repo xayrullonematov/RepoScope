@@ -1,11 +1,12 @@
 "use client";
 
-import type { SessionState, SessionConfig } from "@/types/domain";
+import type { PersistedEvent, SessionState, SessionConfig } from "@/types/domain";
 import ReviewSummaryCard from "./ReviewSummaryCard";
 import TopFindingsList from "./TopFindingsList";
 import RecommendedNextSteps from "./RecommendedNextSteps";
 import ReviewProgressState from "./ReviewProgressState";
 import { isRoundActive } from "./workspace-status";
+import FindingLineagePanel from "./FindingLineagePanel";
 
 interface ReviewOverviewProps {
   session: SessionState & {
@@ -16,6 +17,7 @@ interface ReviewOverviewProps {
   rerunDisabled: boolean;
   onSwitchToFindings: () => void;
   onSwitchToTechnical: () => void;
+  events: PersistedEvent[];
 }
 
 export default function ReviewOverview({
@@ -25,16 +27,22 @@ export default function ReviewOverview({
   rerunDisabled,
   onSwitchToFindings,
   onSwitchToTechnical,
+  events,
 }: ReviewOverviewProps) {
   const hasConsensus = session.consensus !== null;
   const isActive = isRoundActive(session);
+  const isQueuedOrRunning = session.reviewJob?.status === "queued" || session.reviewJob?.status === "running";
 
-  // Show progress state when analysis is running and no consensus yet
-  if (isActive && !hasConsensus) {
+  // A refinement may run while an older consensus remains visible in state;
+  // progress takes precedence until the queued job finishes.
+  if (isQueuedOrRunning || (isActive && !hasConsensus)) {
     return (
       <div className="h-full overflow-y-auto">
         <ReviewProgressState
           currentStage={session.currentStage}
+          job={session.reviewJob ?? null}
+          completedAgents={session.agents.filter((agent) => agent.hasCompletedCurrentStage).length}
+          findingCount={session.artifacts.length}
           onShowTechnical={onSwitchToTechnical}
         />
       </div>
@@ -46,6 +54,7 @@ export default function ReviewOverview({
     return (
       <div className="h-full overflow-y-auto px-4 py-5 space-y-6 sm:px-6 sm:py-6">
         <ReviewSummaryCard session={session} config={session.config} />
+        <FindingLineagePanel events={events} />
         <TopFindingsList session={session} onViewAllFindings={onSwitchToFindings} />
         <RecommendedNextSteps
           session={session}

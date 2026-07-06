@@ -49,6 +49,7 @@ describe("OutputValidator Property-Based Tests", () => {
 
             const result = validator.validateProposal(JSON.stringify(proposal));
             expect(result.success).toBe(false);
+            if (result.success) throw new Error("Expected proposal validation to fail");
             expect(result.errors.some(e => e.includes("confidence"))).toBe(true);
           }
         )
@@ -65,6 +66,7 @@ describe("OutputValidator Property-Based Tests", () => {
 
             const result = validator.validateProposal(JSON.stringify(proposal));
             expect(result.success).toBe(false);
+            if (result.success) throw new Error("Expected proposal validation to fail");
             expect(result.errors.some(e => e.includes("severity"))).toBe(true);
           }
         )
@@ -116,6 +118,7 @@ describe("OutputValidator Property-Based Tests", () => {
 
           const result = validator.validateCritique(JSON.stringify(critique), agentId);
           expect(result.success).toBe(false);
+          if (result.success) throw new Error("Expected critique validation to fail");
           expect(result.errors.some(e => e.includes("cannot be yourself"))).toBe(true);
         })
       );
@@ -144,6 +147,7 @@ describe("OutputValidator Property-Based Tests", () => {
 
       const result = validator.validateRevision(JSON.stringify(revision));
       expect(result.success).toBe(false);
+      if (result.success) throw new Error("Expected revision validation to fail");
       expect(result.errors.some(e => e.includes("concededPoints"))).toBe(true);
     });
 

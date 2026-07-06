@@ -22,7 +22,7 @@ const stageDescription: Record<RoundStage, string> = {
   critique: "Agents are reviewing each other's proposals.",
   revision: "Agents are revising based on critique.",
   consensus: "Synthesising the final decisions.",
-  "awaiting-intervention": "Review artifacts and start the next round.",
+  "awaiting-intervention": "The autonomous review finished and the report is ready.",
 };
 
 export default function StageTransitionToast({ transitions }: StageTransitionToastProps) {

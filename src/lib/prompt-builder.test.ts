@@ -48,6 +48,13 @@ describe("PromptBuilder Property-Based Tests", () => {
   // 2. PROMPT BUILDING AND OBJECTIVE FUNCTION INCLUSION (Task 8.3)
   // ===========================================================================
   describe("Prompt Objective Function Inclusion", () => {
+    const agentArb = fc.constantFrom<AgentType>(
+      "senior-engineer",
+      "security-engineer",
+      "performance-engineer",
+      "product-engineer",
+    );
+
     const constraintArb = fc.record({
       id: fc.uuid(),
       text: fc.string(),
@@ -63,7 +70,8 @@ describe("PromptBuilder Property-Based Tests", () => {
       content: fc.string(),
       status: fc.constantFrom("draft", "accepted", "rejected"),
       version: fc.integer({ min: 1 }),
-      createdByAgentId: fc.string(),
+      createdByAgentId: fc.option(agentArb, { nil: null }),
+      contributors: fc.array(agentArb),
       createdAt: fc.integer({ min: 0, max: 1893456000000 }).map((epoch) => new Date(epoch).toISOString()),
       updatedAt: fc.integer({ min: 0, max: 1893456000000 }).map((epoch) => new Date(epoch).toISOString()),
     });
@@ -74,6 +82,8 @@ describe("PromptBuilder Property-Based Tests", () => {
       majorCritiques: fc.array(fc.string()),
       revisionOutcomes: fc.array(fc.string()),
       consensusPoints: fc.array(fc.string()),
+      artifactsCreated: fc.nat(),
+      artifactsUpdated: fc.nat(),
     });
 
     const persistedEventArb = fc.record({
@@ -94,8 +104,8 @@ describe("PromptBuilder Property-Based Tests", () => {
       artifactSummaries: fc.array(artifactStateArb),
       roundSummaries: fc.array(roundSummaryArb),
       currentRoundEvents: fc.array(persistedEventArb),
-      unresolvedDisagreements: fc.constant([]),
-      priorSessionSummary: fc.option(fc.string()),
+      unresolvedDisagreements: fc.constant<WorkspaceContext["unresolvedDisagreements"]>([]),
+      priorSessionSummary: fc.option(fc.string(), { nil: undefined }),
     });
 
     it("should build proposal prompts containing the agent's objective function", () => {

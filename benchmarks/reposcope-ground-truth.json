@@ -1,0 +1,64 @@
+{
+  "name": "RepoScope autonomous review quality",
+  "repository": "xayrullonematov/RepoScope",
+  "ref": "0c7d7095cace82f5910985c33b54acc5ebee94e6",
+  "problem": "Perform a comprehensive engineering review covering architecture, security, performance, and product impact. Report only concrete, file-backed findings with severity and actionable fixes.",
+  "issues": [
+    {
+      "id": "sync-round-request",
+      "title": "Long-running round execution blocks the HTTP request lifecycle",
+      "category": "architecture",
+      "severity": "high",
+      "paths": ["src/app/api/sessions/[sessionId]/rounds/route.ts"],
+      "keywords": ["blocking", "request timeout", "orchestrator", "background job", "round execution"]
+    },
+    {
+      "id": "sync-advance-request",
+      "title": "Advance endpoint starts another complete round synchronously",
+      "category": "architecture",
+      "severity": "high",
+      "paths": ["src/app/api/sessions/[sessionId]/advance/route.ts"],
+      "keywords": ["skip intervention", "synchronous", "timeout", "start round", "request lifecycle"]
+    },
+    {
+      "id": "recovery-not-started",
+      "title": "Crash recovery is implemented but never registered at application startup",
+      "category": "architecture",
+      "severity": "high",
+      "paths": ["src/lib/startup-recovery.ts"],
+      "keywords": ["startup recovery", "never invoked", "stale locks", "instrumentation", "dead code"]
+    },
+    {
+      "id": "verifier-fail-open",
+      "title": "Finding verification failures are treated as verified",
+      "category": "security",
+      "severity": "medium",
+      "paths": ["src/lib/finding-verifier.ts"],
+      "keywords": ["fail open", "verification failed", "passing by default", "unverified", "confidence"]
+    },
+    {
+      "id": "clarification-default-pause",
+      "title": "Missing clarification configuration pauses otherwise autonomous reviews",
+      "category": "product",
+      "severity": "high",
+      "paths": ["src/lib/round-orchestrator.ts"],
+      "keywords": ["clarification policy", "default allow", "paused", "autonomous", "friction"]
+    },
+    {
+      "id": "full-event-polling",
+      "title": "The client repeatedly downloads the complete event history while a review runs",
+      "category": "performance",
+      "severity": "medium",
+      "paths": ["src/hooks/useEventStream.ts", "src/app/api/sessions/[sessionId]/events/route.ts"],
+      "keywords": ["polling", "full event list", "incremental", "bandwidth", "scales"]
+    },
+    {
+      "id": "cookie-usage-gate",
+      "title": "The free-tier usage gate relies only on a client-controlled cookie",
+      "category": "security",
+      "severity": "medium",
+      "paths": ["src/app/api/sessions/route.ts"],
+      "keywords": ["cookie", "free tier", "usage limit", "bypass", "server-side identity"]
+    }
+  ]
+}

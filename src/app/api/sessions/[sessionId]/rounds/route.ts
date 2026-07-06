@@ -3,14 +3,15 @@
  *
  * POST /api/sessions/[sessionId]/rounds - Start a new debate round
  *
- * Checks budget, acquires session lock, estimates cost, and starts
- * the round orchestrator. For MVP, blocks until round completes.
+ * GET estimates a refinement. POST persists its instruction and queues it.
  */
 
 import { NextResponse } from "next/server";
 import { tokenBudgetManager } from "@/lib/token-budget-manager";
-import { roundOrchestrator } from "@/lib/round-orchestrator";
 import { prisma } from "@/lib/db";
+import { eventStore } from "@/lib/event-store";
+import { enqueueReviewJob } from "@/lib/review-job-queue";
+import { ensureReviewJobSchema } from "@/lib/review-job-queue";
 
 // =============================================================================
 // POST /api/sessions/[sessionId]/rounds
@@ -20,84 +21,82 @@ import { prisma } from "@/lib/db";
 // the orchestrator's "is locked" error into a 409.
 // =============================================================================
 
-export async function POST(
+export async function GET(
   _request: Request,
   { params }: { params: Promise<{ sessionId: string }> }
 ) {
   try {
     const { sessionId } = await params;
-
-    if (!sessionId) {
-      return NextResponse.json(
-        { error: "sessionId is required" },
-        { status: 400 }
-      );
-    }
-
-    // Check budget status — warn at 80%, block at 100%
-    const budgetStatus = await tokenBudgetManager.checkBudget(sessionId);
-
-    if (budgetStatus.isOverBudget) {
-      return NextResponse.json(
-        {
-          error: "Token budget exceeded",
-          budgetStatus,
-        },
-        { status: 402 }
-      );
-    }
-
-    const costEstimate = await tokenBudgetManager.estimateRoundCost(sessionId);
-
-    const session = await prisma.session.findUniqueOrThrow({
-      where: { id: sessionId },
-      select: { currentRound: true },
-    });
-
-    const nextRound = session.currentRound + 1;
-
-    // For MVP this blocks until the round completes. The frontend polls
-    // session detail + events endpoints for stage-progress updates.
-    await roundOrchestrator.startRound(sessionId);
-
     return NextResponse.json({
-      round: nextRound,
-      stage: "proposal",
-      costEstimate,
-      budgetStatus,
+      costEstimate: await tokenBudgetManager.estimateRoundCost(sessionId),
+      budgetStatus: await tokenBudgetManager.checkBudget(sessionId),
     });
   } catch (error) {
-    if (error instanceof Error && error.message.includes("Session is locked")) {
-      return NextResponse.json({ error: "Session is locked" }, { status: 409 });
+    console.error("GET /api/sessions/[sessionId]/rounds error:", error);
+    return NextResponse.json({ error: "Failed to estimate refinement" }, { status: 500 });
+  }
+}
+
+export async function POST(
+  request: Request,
+  { params }: { params: Promise<{ sessionId: string }> }
+) {
+  try {
+    const { sessionId } = await params;
+    const body = (await request.json().catch(() => ({}))) as { instruction?: string; retry?: boolean };
+    const instruction = body.instruction?.trim();
+
+    const [session, budgetStatus] = await Promise.all([
+      prisma.session.findUnique({ where: { id: sessionId } }),
+      tokenBudgetManager.checkBudget(sessionId),
+    ]);
+    if (!session) return NextResponse.json({ error: "Session not found" }, { status: 404 });
+    if (budgetStatus.isOverBudget) {
+      return NextResponse.json({ error: "Token budget exceeded", budgetStatus }, { status: 402 });
     }
 
+    if (body.retry) {
+      await ensureReviewJobSchema();
+      const failed = await prisma.reviewJob.findFirst({
+        where: { sessionId, status: "failed" },
+        orderBy: { createdAt: "desc" },
+      });
+      if (!failed) return NextResponse.json({ error: "No failed review to retry" }, { status: 409 });
+      const job = await enqueueReviewJob(sessionId, {
+        kind: failed.kind === "refinement" ? "refinement" : "initial",
+        instruction: failed.instruction ?? undefined,
+      });
+      return NextResponse.json({ jobId: job.id, sessionId, status: job.status }, { status: 202 });
+    }
+
+    if (session.currentRound > 0 && !instruction) {
+      return NextResponse.json({ error: "Refinement instructions are required" }, { status: 400 });
+    }
+    await ensureReviewJobSchema();
+    const activeJob = await prisma.reviewJob.findUnique({ where: { activeKey: sessionId } });
+    if (activeJob) {
+      return NextResponse.json(
+        { error: "A review is already queued or running", jobId: activeJob.id },
+        { status: 409 },
+      );
+    }
+    if (instruction) {
+      await eventStore.appendEvent({
+        sessionId,
+        type: "user-intervention",
+        agentId: null,
+        round: session.currentRound,
+        stage: "awaiting-intervention",
+        content: { id: `refinement-${Date.now()}`, text: instruction, category: "refinement", createdAt: new Date().toISOString() },
+      });
+    }
+    const job = await enqueueReviewJob(sessionId, {
+      kind: session.currentRound > 0 ? "refinement" : "initial",
+      instruction,
+    });
+    return NextResponse.json({ jobId: job.id, sessionId, status: job.status }, { status: 202 });
+  } catch (error) {
     console.error("POST /api/sessions/[sessionId]/rounds error:", error);
-
-    // Surface specific LLM/orchestrator errors for the frontend error mapper
-    const msg = error instanceof Error ? error.message : "Unknown error";
-    let status = 500;
-    let friendlyError = "Failed to start round";
-
-    if (msg.includes("timed out") || msg.includes("timeout")) {
-      friendlyError = "The AI model took too long to respond. Please try again.";
-      status = 504;
-    } else if (msg.includes("429") || msg.includes("rate limit") || msg.includes("throttl")) {
-      friendlyError = "The AI service is rate-limited. Please wait a moment and try again.";
-      status = 429;
-    } else if (msg.includes("quota") || msg.includes("insufficient")) {
-      friendlyError = "The AI model's usage quota has been exhausted.";
-      status = 429;
-    } else if (msg.includes("401") || msg.includes("API-key") || msg.includes("api_key")) {
-      friendlyError = "The API key is invalid or expired. Check your settings.";
-      status = 401;
-    } else if (msg.includes("budget")) {
-      friendlyError = "Token budget exceeded for this session.";
-      status = 402;
-    }
-
-    return NextResponse.json(
-      { error: friendlyError },
-      { status }
-    );
+    return NextResponse.json({ error: "Failed to queue refinement" }, { status: 500 });
   }
 }

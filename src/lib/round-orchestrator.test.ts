@@ -362,7 +362,9 @@ describe("Round Orchestrator Clarification (Property 12 / Task 11.4)", () => {
           agentId: fc.constantFrom(...ALL_AGENTS),
         }),
         async ({ stage, agentId }) => {
-          await setupSession(sessionId);
+          await setupSession(sessionId, {
+            config: JSON.stringify({ clarificationPolicy: "allow" }),
+          });
           currentSpec = { ...DEFAULT_SPEC, clarifyAt: { stage, agentId } };
 
           await roundOrchestrator.startRound(sessionId);
@@ -456,14 +458,13 @@ describe("Round Orchestrator Auto-Advance + Parallel Dispatch (Property 11 / Tas
 });
 
 // =============================================================================
-// Auto-Escalation — weak consensus triggers exactly one additional round
+// Autonomous completion — one requested debate produces one final report
 // =============================================================================
-describe("Round Orchestrator Auto-Escalation", () => {
-  it("runs a second round when consensus confidence is low, then stops", async () => {
+describe("Round Orchestrator Autonomous Completion", () => {
+  it("finishes after one round even when consensus confidence is low", async () => {
     const sessionId = "sess-escalate";
     await setupSession(sessionId);
 
-    // Low confidence (< 0.6) should trigger a single auto-escalation.
     currentSpec = { ...DEFAULT_SPEC, consensusConfidence: 0.5 };
 
     await roundOrchestrator.startRound(sessionId);
@@ -471,13 +472,13 @@ describe("Round Orchestrator Auto-Escalation", () => {
     const session = await prisma.session.findUniqueOrThrow({
       where: { id: sessionId },
     });
-    // Escalated from round 1 → round 2, then hard-capped (no round 3).
-    expect(session.currentRound).toBe(2);
+    expect(session.currentRound).toBe(1);
     expect(session.currentStage).toBe("awaiting-intervention");
+    expect(session.status).toBe("completed");
 
     const events = await eventStore.getSessionEvents(sessionId);
     const completed = events.filter((e) => e.type === "round-completed");
-    expect(completed.length).toBe(2);
+    expect(completed.length).toBe(1);
   }, 60_000);
 
   it("does not escalate when consensus confidence is high", async () => {
@@ -492,6 +493,7 @@ describe("Round Orchestrator Auto-Escalation", () => {
       where: { id: sessionId },
     });
     expect(session.currentRound).toBe(1);
+    expect(session.status).toBe("completed");
 
     const events = await eventStore.getSessionEvents(sessionId);
     const completed = events.filter((e) => e.type === "round-completed");
@@ -596,6 +598,28 @@ describe("Round Orchestrator Consensus Artifact Operations (Property 19 / Task 1
 //   3. Hallucinated artifact ID in consensus ops (skipped, round completes)
 // =============================================================================
 describe("Round Orchestrator Multi-Round Regression", () => {
+  it("suppresses clarification by default for autonomous sessions", async () => {
+    const sessionId = "sess-default-autonomous";
+
+    await setupSession(sessionId);
+    currentSpec = {
+      ...DEFAULT_SPEC,
+      clarifyAt: { stage: "proposal", agentId: "senior-engineer" },
+    };
+
+    await roundOrchestrator.startRound(sessionId);
+
+    const session = await prisma.session.findUniqueOrThrow({
+      where: { id: sessionId },
+    });
+    expect(session.status).toBe("completed");
+    expect(session.currentStage).toBe("awaiting-intervention");
+
+    const events = await eventStore.getSessionEvents(sessionId);
+    expect(events.some((e) => e.type === "clarification-request")).toBe(false);
+    expect(events.some((e) => e.type === "round-completed")).toBe(true);
+  });
+
   it("completes a full round despite clarification requests, undefined content, and hallucinated IDs", async () => {
     const sessionId = "sess-regression";
 
@@ -628,7 +652,7 @@ describe("Round Orchestrator Multi-Round Regression", () => {
     const session = await prisma.session.findUniqueOrThrow({
       where: { id: sessionId },
     });
-    expect(session.status).toBe("active");
+    expect(session.status).toBe("completed");
     expect(session.currentStage).toBe("awaiting-intervention");
     expect(session.currentRound).toBe(1);
 

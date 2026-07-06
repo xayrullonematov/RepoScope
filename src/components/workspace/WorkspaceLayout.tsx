@@ -5,22 +5,19 @@ import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   ArrowLeft,
-  Loader2,
   ArrowRight,
-  Play,
   Filter,
   ChevronDown,
 } from "lucide-react";
 import type { SessionState, RoundStage, ArtifactType, ArtifactStatus } from "@/types/domain";
 import WorkspaceTabs from "./WorkspaceTabs";
 import MobileTabBar from "./MobileTabBar";
-import ArtifactCard from "./ArtifactCard";
 import FindingCard from "./FindingCard";
-import InterventionPanel from "./InterventionPanel";
 import NotificationBanner from "@/components/ui/NotificationBanner";
 import EmptyState from "@/components/ui/EmptyState";
 import ClarificationPanel from "./ClarificationPanel";
 import BudgetEditDialog from "./BudgetEditDialog";
+import RefinementDialog from "./RefinementDialog";
 import ExportMenu, { type ExportMenuHandle } from "./ExportMenu";
 import { isRoundActive } from "./workspace-status";
 import ReviewOverview from "./ReviewOverview";
@@ -62,9 +59,9 @@ export default function WorkspaceLayout({ session, mutate }: WorkspaceLayoutProp
   const [artifactTypeFilter, setArtifactTypeFilter] = useState<ArtifactType | "all">("all");
   const [artifactStatusFilter, setArtifactStatusFilter] = useState<ArtifactStatus | "all">("all");
   const [showBudgetDialog, setShowBudgetDialog] = useState(false);
+  const [showRefinementDialog, setShowRefinementDialog] = useState(false);
   const [filtersOpen, setFiltersOpen] = useState(false);
   const exportMenuRef = useRef<ExportMenuHandle>(null);
-  const autoStartAttemptedRef = useRef(false);
   const recoveryKey = session.recoveredAt ?? null;
   const recoveryShownRef = useRef<string | null>(null);
 
@@ -89,10 +86,9 @@ export default function WorkspaceLayout({ session, mutate }: WorkspaceLayoutProp
     }
   }, [stageTransitions.length, mutate]);
 
-  const isEmptyState = session.currentRound === 0 && session.artifacts.length === 0 && !session.currentStage;
+  const jobInFlight = session.reviewJob?.status === "queued" || session.reviewJob?.status === "running";
+  const isEmptyState = session.currentRound === 0 && session.artifacts.length === 0 && !session.currentStage && !session.reviewJob;
   const isActiveRound = isRoundActive(session);
-  const isAwaitingIntervention =
-    session.status === "active" && session.currentStage === "awaiting-intervention";
 
   const completedStages = useMemo(() => getCompletedStages(session.currentStage), [session.currentStage]);
 
@@ -131,10 +127,14 @@ export default function WorkspaceLayout({ session, mutate }: WorkspaceLayoutProp
     { id: "technical", label: "Technical activity" },
   ], [session.artifacts.length]);
 
-  const handleStartRound = useCallback(async () => {
+  const handleQueueInitial = useCallback(async () => {
     setIsStartingRound(true);
     try {
-      const res = await fetch(`/api/sessions/${session.id}/rounds`, { method: "POST" });
+      const res = await fetch(`/api/sessions/${session.id}/rounds`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: "{}",
+      });
       if (!res.ok) {
         const body = (await res.json().catch(() => ({}))) as { error?: string };
         toast.error({ message: "Couldn't start analysis", description: body.error ?? "Something went wrong. Please try again." });
@@ -148,6 +148,25 @@ export default function WorkspaceLayout({ session, mutate }: WorkspaceLayoutProp
           ? "Couldn't reach the server. Check your connection."
           : "A network error occurred. Please try again.",
       });
+    } finally {
+      setIsStartingRound(false);
+    }
+  }, [mutate, session.id]);
+
+  const handleRetry = useCallback(async () => {
+    setIsStartingRound(true);
+    try {
+      const res = await fetch(`/api/sessions/${session.id}/rounds`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ retry: true }),
+      });
+      const body = (await res.json().catch(() => ({}))) as { error?: string };
+      if (!res.ok) throw new Error(body.error ?? "Could not retry this review.");
+      mutate?.();
+      toast.info({ message: "Review queued again" });
+    } catch (err) {
+      toast.error({ message: "Couldn't retry review", description: err instanceof Error ? err.message : "Network error" });
     } finally {
       setIsStartingRound(false);
     }
@@ -186,34 +205,13 @@ export default function WorkspaceLayout({ session, mutate }: WorkspaceLayoutProp
     URL.revokeObjectURL(url);
   };
 
-  const startRoundDisabled =
-    isStartingRound ||
-    session.status !== "active" ||
-    (session.currentStage !== null && session.currentStage !== "awaiting-intervention");
-
-  useEffect(() => {
-    const autoStartRequested = new URLSearchParams(window.location.search).get("start") === "1";
-    if (!autoStartRequested || autoStartAttemptedRef.current || !isEmptyState || startRoundDisabled) return;
-    autoStartAttemptedRef.current = true;
-    router.replace(`/sessions/${session.id}`, { scroll: false });
-    // Fire-and-forget: start round, let polling pick up progress
-    const controller = new AbortController();
-    setIsStartingRound(true);
-    fetch(`/api/sessions/${session.id}/rounds`, { method: "POST", signal: controller.signal })
-      .then((res) => {
-        if (res.ok) {
-          mutate?.();
-          router.push(`/sessions/${session.id}/summary`);
-        }
-      })
-      .catch(() => { /* aborted or network error */ })
-      .finally(() => setIsStartingRound(false));
-    return () => controller.abort();
-  }, [isEmptyState, router, session.id, startRoundDisabled, mutate]);
+  const startRoundDisabled = isStartingRound || jobInFlight;
 
   useKeyboardShortcuts({
     "start-round": () => {
-      if (!startRoundDisabled) handleStartRound();
+      if (startRoundDisabled) return;
+      if (session.currentRound > 0) setShowRefinementDialog(true);
+      else void handleQueueInitial();
     },
     export: () => exportMenuRef.current?.open(),
   });
@@ -222,7 +220,7 @@ export default function WorkspaceLayout({ session, mutate }: WorkspaceLayoutProp
     <div className="min-h-screen h-screen flex flex-col bg-[var(--background)]">
       {/* Header */}
       <header className="relative border-b border-[var(--border)] bg-[var(--background)] px-3 py-2 shrink-0 sm:px-4 sm:py-3">
-        {isActiveRound && (
+        {(isActiveRound || jobInFlight) && (
           <div className="absolute bottom-0 left-0 right-0 h-px bg-[var(--brand-violet)]/70" />
         )}
         <div className="flex items-center justify-between">
@@ -238,7 +236,7 @@ export default function WorkspaceLayout({ session, mutate }: WorkspaceLayoutProp
             <h1 className="max-w-[180px] truncate text-sm font-medium text-[var(--text-primary)] sm:max-w-sm lg:max-w-lg">
               {session.problemDescription.slice(0, 60)}
             </h1>
-            {isActiveRound && (
+            {(isActiveRound || jobInFlight) && (
               <span className="hidden sm:inline-flex items-center gap-1.5 text-xs text-violet-300">
                 <span className="h-1.5 w-1.5 rounded-full bg-violet-400 animate-pulse" />
                 Analyzing
@@ -260,13 +258,12 @@ export default function WorkspaceLayout({ session, mutate }: WorkspaceLayoutProp
       </header>
 
       <AnimatePresence>
-        {isAwaitingIntervention && !hasPendingClarification && activeTab === "overview" && (
+        {session.reviewJob?.status === "failed" && activeTab === "overview" && (
           <div className="px-4 pt-3 shrink-0">
             <NotificationBanner
               type="warning"
-              message="Report ready. You can add instructions to refine the analysis, or export the results."
-              action={{ label: "Refine", onClick: handleStartRound }}
-              dismissible
+              message={session.reviewJob.error ?? "The review stopped before it could finish."}
+              action={{ label: isStartingRound ? "Queueing…" : "Retry review", onClick: handleRetry }}
             />
           </div>
         )}
@@ -279,6 +276,12 @@ export default function WorkspaceLayout({ session, mutate }: WorkspaceLayoutProp
         currentUsed={totalTokens}
         onClose={() => setShowBudgetDialog(false)}
         onSaved={() => mutate?.()}
+      />
+      <RefinementDialog
+        open={showRefinementDialog}
+        sessionId={session.id}
+        onClose={() => setShowRefinementDialog(false)}
+        onQueued={() => mutate?.()}
       />
 
       {/* Main Body */}
@@ -305,7 +308,7 @@ export default function WorkspaceLayout({ session, mutate }: WorkspaceLayoutProp
               )}
               {!session.constraints.length && <div className="mb-6" />}
               <button
-                onClick={handleStartRound}
+                onClick={handleQueueInitial}
                 disabled={startRoundDisabled}
                 className="inline-flex items-center gap-2 rounded-lg bg-[var(--brand-violet)] px-6 py-3 font-semibold text-white transition-colors hover:bg-[var(--violet-hover)] disabled:opacity-50 focus:outline-none focus:ring-2 focus:ring-[var(--violet-glow)]"
               >
@@ -338,10 +341,11 @@ export default function WorkspaceLayout({ session, mutate }: WorkspaceLayoutProp
                 <ReviewOverview
                   session={session}
                   onExport={handleExportFromResults}
-                  onRerun={handleStartRound}
+                  onRerun={() => setShowRefinementDialog(true)}
                   rerunDisabled={startRoundDisabled}
                   onSwitchToFindings={() => setActiveTab("findings")}
                   onSwitchToTechnical={() => setActiveTab("technical")}
+                  events={events}
                 />
               )}
 

@@ -18,7 +18,7 @@ const stageVerb: Record<RoundStage, string> = {
   critique: "writing critique",
   revision: "revising",
   consensus: "synthesising consensus",
-  "awaiting-intervention": "waiting on you",
+  "awaiting-intervention": "report ready",
 };
 
 function deriveLabel(

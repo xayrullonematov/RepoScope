@@ -2,21 +2,13 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { ChevronDown, ChevronUp, GitBranch, BookOpen, MessageCircleQuestion } from "lucide-react";
+import { ChevronDown, ChevronUp, GitBranch, BookOpen } from "lucide-react";
 import ConstraintInput from "./ConstraintInput";
 import PriorSessionPicker from "./PriorSessionPicker";
 
 interface ConstraintItem {
   text: string;
   category: string;
-}
-
-type ClarificationPolicy = "allow" | "suppress" | "limit-1" | "limit-3";
-
-function policyToValue(p: ClarificationPolicy): "allow" | "suppress" | number {
-  if (p === "limit-1") return 1;
-  if (p === "limit-3") return 3;
-  return p;
 }
 
 const reviewTypes: { id: string; label: string; problem: string }[] = [
@@ -64,7 +56,6 @@ export default function NewSessionForm({ githubRepo: controlledRepo, onGithubRep
   const [constraints, setConstraints] = useState<ConstraintItem[]>([]);
   const [internalRepo, setInternalRepo] = useState("");
   const [priorSessionSummary, setPriorSessionSummary] = useState("");
-  const [clarificationPolicy, setClarificationPolicy] = useState<ClarificationPolicy>("suppress");
   const [showAdvanced, setShowAdvanced] = useState(false);
   const [showPicker, setShowPicker] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -89,10 +80,6 @@ export default function NewSessionForm({ githubRepo: controlledRepo, onGithubRep
       };
       if (githubRepo.trim()) payload.githubRepo = githubRepo.trim();
       if (priorSessionSummary.trim()) payload.priorSessionSummary = priorSessionSummary.trim();
-      if (clarificationPolicy !== "allow") {
-        payload.config = { clarificationPolicy: policyToValue(clarificationPolicy) };
-      }
-
       const res = await fetch("/api/sessions", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -108,7 +95,7 @@ export default function NewSessionForm({ githubRepo: controlledRepo, onGithubRep
       }
 
       const data = await res.json();
-      router.push(`/sessions/${data.sessionId}?start=1`);
+      router.push(`/sessions/${data.sessionId}`);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Something went wrong");
     } finally {
@@ -204,28 +191,6 @@ export default function NewSessionForm({ githubRepo: controlledRepo, onGithubRep
                 />
                 <p className="text-sm text-[var(--text-muted)] mt-1">
                   Maximum tokens the review can consume. Leave empty for no limit.
-                </p>
-              </div>
-
-              {/* Clarification policy */}
-              <div>
-                <label htmlFor="clarification-policy" className="flex items-center gap-1.5 text-sm font-medium text-[var(--text-secondary)] mb-1">
-                  <MessageCircleQuestion size={14} className="text-[var(--text-muted)]" />
-                  Clarification policy
-                </label>
-                <select
-                  id="clarification-policy"
-                  value={clarificationPolicy}
-                  onChange={(e) => setClarificationPolicy(e.target.value as ClarificationPolicy)}
-                  className="min-h-11 w-full rounded-lg border border-[var(--border)] bg-[var(--surface-elevated)] px-3 py-2 text-sm text-[var(--text-primary)] focus:border-[var(--brand-violet)] focus:outline-none focus:ring-2 focus:ring-[var(--violet-glow)]"
-                >
-                  <option value="allow">Allow — pause when AI reviewers need clarification</option>
-                  <option value="limit-1">Limit to 1 question per pass</option>
-                  <option value="limit-3">Limit to 3 questions per pass</option>
-                  <option value="suppress">Suppress — fully autonomous run</option>
-                </select>
-                <p className="text-sm text-[var(--text-muted)] mt-1">
-                  Controls whether AI reviewers can ask you questions mid-review.
                 </p>
               </div>
 

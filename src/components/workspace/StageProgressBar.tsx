@@ -6,7 +6,7 @@ import {
   ShieldCheck,
   FileText,
   CheckCircle,
-  Hand,
+  CheckCircle2,
 } from "lucide-react";
 import type { RoundStage } from "@/types/domain";
 
@@ -55,7 +55,7 @@ export default function StageProgressBar({
       <div className="flex items-center justify-between gap-3 sm:hidden">
         <div className="flex min-w-0 items-center gap-2">
           {showIntervention ? (
-            <Hand size={17} className="shrink-0 text-amber-400" />
+            <CheckCircle2 size={17} className="shrink-0 text-green-400" />
           ) : currentStage ? (
             <Loader size={17} className="shrink-0 text-violet-400 animate-spin" />
           ) : (
@@ -148,10 +148,10 @@ export default function StageProgressBar({
                 />
               </svg>
             </div>
-            <div className="relative flex items-center gap-2 px-3 py-2 rounded-lg bg-amber-500/10 border border-amber-500/30 animate-pulse">
-              <Hand size={16} className="text-amber-400 shrink-0" />
-              <span className="text-xs font-medium text-amber-300 whitespace-nowrap">
-                Your turn
+            <div className="relative flex items-center gap-2 px-3 py-2 rounded-lg bg-green-500/10 border border-green-500/30">
+              <CheckCircle2 size={16} className="text-green-400 shrink-0" />
+              <span className="text-xs font-medium text-green-300 whitespace-nowrap">
+                Report ready
               </span>
             </div>
           </>

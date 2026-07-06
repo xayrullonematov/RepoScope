@@ -57,8 +57,8 @@ export type ArtifactStatus = "draft" | "accepted" | "rejected";
 
 /**
  * clarificationPolicy controls whether agents can pause a round for clarification.
- * - "allow"    — default, pause on any clarification request
- * - "suppress" — ignore all clarification requests, never pause
+ * - "suppress" — default, ignore clarification requests and keep running
+ * - "allow"    — explicitly pause on any clarification request
  * - number     — max questions allowed per stage before suppressing the rest
  */
 export type ClarificationPolicy = "allow" | "suppress" | number;
@@ -174,6 +174,16 @@ export interface SessionState {
   artifacts: ArtifactState[];
   consensus: ConsensusOutput | null;
   tokenUsage: SessionTokenUsage;
+  reviewJob?: {
+    id: string;
+    status: "queued" | "running" | "completed" | "failed";
+    kind: "initial" | "refinement";
+    attempts: number;
+    error: string | null;
+    createdAt: string;
+    startedAt: string | null;
+    completedAt: string | null;
+  } | null;
 }
 
 /** A user-provided constraint */

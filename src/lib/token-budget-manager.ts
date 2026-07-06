@@ -100,6 +100,11 @@ function calculateCost(
   );
 }
 
+/** Shared deterministic pricing helper used by the controlled benchmark. */
+export function estimateUsageCost(inputTokens: number, outputTokens: number, model: string): number {
+  return calculateCost(inputTokens, outputTokens, model);
+}
+
 // =============================================================================
 // CONSTANTS
 // =============================================================================

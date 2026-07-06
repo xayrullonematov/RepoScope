@@ -246,8 +246,8 @@ describe("parseStageProgress", () => {
       groundedByRepo: true,
     });
     const event = makeEvent(content);
-    // Clear the event-level agentId
-    (event as Record<string, unknown>).agentId = undefined;
+    // Clear the event-level agentId using the domain's explicit missing value.
+    event.agentId = null;
     const result = parseStageProgress(event);
     expect(result).not.toBeNull();
     expect(result!.agentId).toBe("senior-engineer");

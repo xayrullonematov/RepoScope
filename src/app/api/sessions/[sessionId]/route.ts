@@ -13,6 +13,7 @@ import { prisma } from "@/lib/db";
 import { eventStore } from "@/lib/event-store";
 import { snapshotManager } from "@/lib/snapshot-manager";
 import { tokenBudgetManager } from "@/lib/token-budget-manager";
+import { getLatestReviewJob } from "@/lib/review-job-queue";
 import type { SessionConfig } from "@/types/domain";
 
 function parseSessionConfig(raw: string | null): SessionConfig {
@@ -51,13 +52,14 @@ export async function GET(
       );
     }
 
-    const [tokenUsage, row, events] = await Promise.all([
+    const [tokenUsage, row, events, reviewJob] = await Promise.all([
       tokenBudgetManager.getSessionUsage(sessionId),
       prisma.session.findUnique({
         where: { id: sessionId },
         select: { tokenBudget: true, config: true, status: true },
       }),
       eventStore.getSessionEvents(sessionId),
+      getLatestReviewJob(sessionId),
     ]);
 
     const config = parseSessionConfig(row?.config ?? null);
@@ -88,6 +90,7 @@ export async function GET(
       config,
       wasRecovered,
       recoveredAt,
+      reviewJob,
     });
   } catch (error) {
     console.error("GET /api/sessions/[sessionId] error:", error);

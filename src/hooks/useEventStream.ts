@@ -53,7 +53,7 @@ function deriveLastEventByAgent(events: PersistedEvent[]): Partial<Record<AgentT
   return map;
 }
 
-export function useEventStream(sessionId: string, active: boolean = true) {
+export function useEventStream(sessionId: string, polling: boolean = true) {
   // Always fetch the full list via a stable SWR key. The `compare` option keeps
   // the previous response reference whenever the server's totalCount is
   // unchanged, so `data.events` stays referentially stable across polls that
@@ -61,10 +61,10 @@ export function useEventStream(sessionId: string, active: boolean = true) {
   // This avoids the effect/setState-mirror pattern (and its cascading-render
   // and ref-in-render lint hazards) entirely.
   const { data, error, isLoading } = useSWR<EventStreamResponse>(
-    sessionId && active ? `/api/sessions/${sessionId}/events` : null,
+    sessionId ? `/api/sessions/${sessionId}/events` : null,
     fetcher,
     {
-      refreshInterval: active ? 2000 : 0,
+      refreshInterval: polling ? 2000 : 0,
       compare: (a, b) => a?.totalCount === b?.totalCount,
     },
   );

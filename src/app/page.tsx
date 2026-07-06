@@ -167,7 +167,7 @@ export default function Home() {
       }
 
       const data = await res.json();
-      router.push(`/sessions/${data.sessionId}?start=1`);
+      router.push(`/sessions/${data.sessionId}`);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Something went wrong. Please try again.");
     } finally {

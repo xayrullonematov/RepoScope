@@ -30,7 +30,6 @@ import { prisma } from "@/lib/db";
 import { fetchRepoTree, GithubError } from "@/lib/github-fetcher";
 import { selectCandidateFiles } from "@/lib/repo-file-selector";
 import {
-  MAX_ROUNDS,
   MAX_ARTIFACTS_PER_AGENT,
   MAX_RAW_FINDINGS,
   MAX_REVIEW_TIME_MS,
@@ -415,10 +414,12 @@ export const roundOrchestrator: RoundOrchestrator = {
         content: { round: nextRound },
       });
 
-      // Update session stage to awaiting-intervention
+      // The report is ready. Keep the terminal stage for event/snapshot
+      // compatibility, but mark the session completed so the UI never asks
+      // the user to advance an autonomous review.
       await prisma.session.update({
         where: { id: sessionId },
-        data: { currentStage: "awaiting-intervention" },
+        data: { status: "completed", currentStage: "awaiting-intervention" },
       });
 
       // NOW create snapshot (includes round-completed event)
@@ -460,28 +461,6 @@ export const roundOrchestrator: RoundOrchestrator = {
         }
       }
 
-      // --- Smart auto-escalation: run another round only if consensus is weak ---
-      const shouldEscalate = (() => {
-        if (nextRound >= 2) return false; // Hard cap at 1 round by default
-        const consensusEvent = allEvents
-          .filter((e) => e.type === "consensus-update" && e.round === nextRound)
-          .pop();
-        if (!consensusEvent) return false;
-        try {
-          const consensus: ConsensusOutput =
-            typeof consensusEvent.content === "string"
-              ? JSON.parse(consensusEvent.content)
-              : (consensusEvent.content as ConsensusOutput);
-          // Escalate when confidence is low or disagreements dominate
-          return (
-            consensus.overallConfidence < 0.6 ||
-            consensus.disagreements.length > consensus.agreements.length
-          );
-        } catch {
-          return false;
-        }
-      })();
-
       // Auto-export session markdown
       try {
         const { markdown, filename } = await generateSessionExport(sessionId);
@@ -494,20 +473,6 @@ export const roundOrchestrator: RoundOrchestrator = {
         // Export failure must not break the round
       }
 
-      // If escalation warranted, release lock and recursively start next round
-      if (shouldEscalate) {
-        const budgetCheck = await tokenBudgetManager.checkBudget(sessionId);
-        if (!budgetCheck.isOverBudget) {
-          console.log(
-            `[round-orchestrator] Auto-escalating to round ${nextRound + 1} ` +
-              `(low confidence or high disagreement)`
-          );
-          await sessionLock.release(sessionId, lockId);
-          // Recursively start next round (lock is released; startRound will re-acquire)
-          await roundOrchestrator.startRound(sessionId);
-          return; // Skip the finally-release since we already released
-        }
-      }
     } finally {
       // Always release the lock
       await sessionLock.release(sessionId, lockId);
@@ -919,11 +884,10 @@ export const roundOrchestrator: RoundOrchestrator = {
       const config: SessionConfig = session.config
         ? JSON.parse(session.config)
         : {};
-      // Default "allow" matches the documented contract in domain.ts and the
-      // NewSessionForm, which omits config entirely when the user selects
-      // "allow" (so absence must mean allow, not suppress). Autonomous entry
-      // points (e.g. /api/analyze) set "suppress" explicitly.
-      const policy = config.clarificationPolicy ?? "allow";
+      // Autonomous debate must keep moving unless an API caller explicitly
+      // opts into a human clarification checkpoint. Using "suppress" as the
+      // fallback also fixes legacy sessions that predate this config field.
+      const policy = config.clarificationPolicy ?? "suppress";
 
       // "suppress" or 0 → never pause for clarification
       // number > 0 → pause but cap questions to that count

@@ -9,6 +9,7 @@ import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { prisma } from "@/lib/db";
 import { eventStore } from "@/lib/event-store";
+import { enqueueReviewJob } from "@/lib/review-job-queue";
 import { parseGithubUrl, GithubError } from "@/lib/github-fetcher";
 import type { AgentType, SessionConfig } from "@/types/domain";
 
@@ -194,11 +195,13 @@ export async function POST(request: Request) {
     }
 
     await incrementUsage();
+    const job = await enqueueReviewJob(session.id);
 
     return NextResponse.json(
       {
         sessionId: session.id,
-        status: session.status,
+        jobId: job.id,
+        status: job.status,
         agents: ALL_AGENTS,
       },
       { status: 201 }

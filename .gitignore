@@ -16,6 +16,8 @@ Thumbs.db
 dist/
 build/
 .movistan/
+benchmarks/*.db
+benchmarks/output/
 # Hamma local agent handoff artifacts
 .hamma/
 

@@ -6,6 +6,7 @@ process.env.DATABASE_URL = "file:./test.db";
 
 // Clear database tables before each test to ensure isolation
 beforeEach(async () => {
+  await prisma.reviewJob.deleteMany().catch(() => {});
   await prisma.artifactVersion.deleteMany().catch(() => {});
   await prisma.artifact.deleteMany().catch(() => {});
   await prisma.event.deleteMany().catch(() => {});

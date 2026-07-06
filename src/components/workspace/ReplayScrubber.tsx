@@ -73,7 +73,7 @@ const stageLabels: Record<RoundStage, string> = {
   critique: "Critique",
   revision: "Revision",
   consensus: "Agreement",
-  "awaiting-intervention": "Awaiting input",
+  "awaiting-intervention": "Report ready",
 };
 
 const stageDescriptions: Partial<Record<RoundStage, string>> = {
