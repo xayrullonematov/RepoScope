@@ -155,6 +155,11 @@ export default function AgentArena({
             );
           })}
         </svg>
+        {!compact && (
+          <p className="mt-2 text-center text-[11px] leading-relaxed text-gray-500">
+            Dashed lines = <span className="text-gray-300">critique pairs</span>, routed by <span className="text-gray-300">maximum objective conflict</span> — not turn order.
+          </p>
+        )}
       </div>
 
       <div className={compact ? "flex-1 space-y-2 overflow-y-auto px-2 pb-3" : "flex-1 space-y-2 overflow-y-auto px-3 pb-3"}>

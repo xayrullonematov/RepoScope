@@ -181,13 +181,13 @@ export default function Home() {
       <section className="flex min-h-[calc(100svh-4rem)] flex-col items-center justify-center px-4 py-16 sm:px-6">
         <div className="mx-auto max-w-3xl space-y-6 text-center">
           <h1 className="text-3xl font-bold leading-tight tracking-tight text-[var(--text-primary)] sm:text-4xl md:text-5xl lg:text-6xl">
-            Review any GitHub repo{" "}
+            Four AI engineers{" "}
             <span className="bg-gradient-to-r from-violet-400 to-purple-300 bg-clip-text text-transparent">
-              in minutes
+              argue about your code
             </span>
           </h1>
           <p className="mx-auto max-w-2xl text-base leading-relaxed text-[var(--text-secondary)] md:text-lg">
-            Paste a public repository and get a prioritized engineering report with bugs, security risks, architecture issues, and production-readiness gaps.
+            Senior, security, performance, and product agents — each with a conflicting objective — debate your GitHub repo through structured proposal → critique → revision → consensus rounds, then hand you a prioritized engineering report.
           </p>
 
           <form onSubmit={handleAnalyze} className="mx-auto flex max-w-xl flex-col gap-3 sm:flex-row sm:gap-2">
@@ -345,7 +345,7 @@ export default function Home() {
           <div className="grid grid-cols-1 gap-4 md:grid-cols-3 md:gap-8">
             {[
               { icon: Link2, step: "1", title: "Paste repo", desc: "Drop a GitHub URL. Public repos work instantly." },
-              { icon: Search, step: "2", title: "AI reviewers inspect files", desc: "Specialized reviewers check security, bugs, architecture, and more." },
+              { icon: Search, step: "2", title: "Four engineers debate", desc: "Senior, security, performance, and product agents propose, critique each other by maximum objective conflict, then revise until consensus." },
               { icon: FileText, step: "3", title: "Get a prioritized fix plan", desc: "Receive a structured report with severity, evidence, and fixes." },
             ].map(({ icon: Icon, step, title, desc }) => (
               <div key={step} className="flex items-start gap-3 rounded-lg border border-[var(--border)] bg-[var(--surface)] p-4 md:flex-col md:items-center md:text-center md:p-6">
@@ -394,7 +394,7 @@ export default function Home() {
           </p>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             {[
-              { title: "Multiple angles", desc: "Specialized reviewers check security, performance, architecture, and bugs independently." },
+              { title: "Adversarial by design", desc: "Critiques are routed by maximum objective conflict — Senior ↔ Performance, Security ↔ Product. Agents can't rubber-stamp each other." },
               { title: "Structured findings", desc: "Findings are categorized by severity with file paths, not buried in paragraphs." },
               { title: "File-level evidence", desc: "Every finding points to the exact file and line, so you know where to look." },
               { title: "Copy-paste fixes", desc: "Suggested fixes are concrete enough to paste into your editor or coding tool." },
@@ -453,7 +453,7 @@ export default function Home() {
         <div className="mx-auto max-w-5xl text-center">
           <p className="text-sm font-medium text-[var(--text-secondary)]">RepoScope</p>
           <p className="mt-2 text-xs text-[var(--text-muted)]">
-            File-level findings · Evidence-backed fixes · Powered by AI reviewers
+            File-level findings · Evidence-backed fixes · Four agents, one report
           </p>
         </div>
       </footer>

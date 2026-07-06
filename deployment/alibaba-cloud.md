@@ -147,17 +147,15 @@ curl -s http://127.0.0.1:3001/api/config -o /dev/null -w "config API: HTTP %{htt
 
 ### 3. Public deployment-proof endpoint
 
-Safe, non-sensitive deployment metadata (see the route below). The public domain
-sits behind Cloudflare's managed bot challenge, so open this URL **in a browser**
-(a plain `curl` from a terminal receives the Cloudflare "Just a moment…"
-interstitial, not the JSON):
+Safe, non-sensitive deployment metadata (see the route below). Open in a browser
+or hit it from any terminal — DNS points directly to the ECS origin, so `curl`
+works too:
 
-```
-https://reposcope.myrepo.xyz/api/deployment-proof
+```bash
+curl -s https://reposcope.myrepo.xyz/api/deployment-proof
 ```
 
-To prove the same endpoint from a terminal, hit the app directly on the ECS host
-(bypassing Cloudflare/Nginx):
+Or from the ECS host itself, bypassing Nginx:
 
 ```bash
 curl -s http://127.0.0.1:3001/api/deployment-proof
@@ -266,20 +264,26 @@ whois 47.84.200.2 | grep -iE 'netname|org|country'   # → Alibaba, SG
 - Any "IP → ASN" service will resolve `47.84.200.2` to Alibaba Cloud, Singapore
   (`ap-southeast-1`), matching the `region` reported by the proof endpoint.
 
-### Note on Cloudflare
+### DNS points directly to the ECS origin
 
-The public hostname `reposcope.myrepo.xyz` is served **through Cloudflare**, so a
-DNS lookup of the *domain* returns Cloudflare addresses, not the origin:
+`reposcope.myrepo.xyz` is **not** fronted by a CDN — DNS resolves directly to
+the ECS Elastic IP, and the origin's own Let's Encrypt certificate is what
+browsers see:
 
 ```bash
-dig +short reposcope.myrepo.xyz     # → Cloudflare IPs (e.g. 104.21.x / 2606:4700::…)
+dig +short reposcope.myrepo.xyz     # → 47.84.200.2  (the ECS Elastic IP)
+
+echo | openssl s_client -connect reposcope.myrepo.xyz:443 -servername reposcope.myrepo.xyz 2>/dev/null \
+  | openssl x509 -noout -issuer -subject
+# → issuer=  C = US, O = Let's Encrypt, CN = ...
+# → subject= CN = reposcope.myrepo.xyz
 ```
 
-That is expected — Cloudflare fronts the origin for TLS/CDN. The zero-trust proof
-above is therefore stated against the **origin IP `47.84.200.2`**, which is the
-Alibaba Cloud ECS instance itself. (For the most airtight human proof, pair this
-with a screenshot of the Alibaba Cloud ECS console showing the instance in
-`ap-southeast-1` with public IP `47.84.200.2`.)
+So the zero-trust proof above (`47.84.200.2` → AS45102 Alibaba, Singapore) is
+stated against the exact IP the domain resolves to — no intermediary. Pair
+this with the Alibaba Cloud ECS console screenshot showing the instance in
+`ap-southeast-1` with Elastic IP `47.84.200.2` for the most airtight human
+proof.
 
 ## The deployment-proof route
 

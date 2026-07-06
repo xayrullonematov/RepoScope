@@ -91,14 +91,24 @@ export default function AgentCard({
       }}
     >
       <div className={compact ? "flex items-center justify-between gap-2 px-2.5 py-2" : "flex items-center justify-between gap-2 px-3 py-2"}>
-        <div className="flex min-w-0 items-center gap-2">
+        <div className="flex min-w-0 flex-1 items-center gap-2">
           <div
             className="h-2.5 w-2.5 shrink-0 rounded-full"
             style={{ backgroundColor: agentColors[agent.id] }}
           />
-          <span className="truncate text-sm font-medium text-gray-200">
-            {compact ? shortName : agent.displayName}
-          </span>
+          <div className="min-w-0 flex-1">
+            <span className="block truncate text-sm font-medium text-gray-200">
+              {compact ? shortName : agent.displayName}
+            </span>
+            {!compact && agent.objectiveFunction && (
+              <span
+                className="block truncate text-[11px] leading-tight text-gray-500"
+                title={agent.objectiveFunction}
+              >
+                {agent.objectiveFunction}
+              </span>
+            )}
+          </div>
         </div>
 
         {!compact && (
