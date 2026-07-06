@@ -217,13 +217,13 @@ export default function DebateChat({
             className="min-h-11 rounded px-2 text-sm text-gray-300 transition-colors hover:text-gray-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/70"
             aria-pressed={showDeveloperDetails}
           >
-            {showDeveloperDetails ? "Hide developer details" : "Developer details"}
+            {showDeveloperDetails ? "Hide Qwen evidence" : "Qwen evidence"}
           </button>
         </div>
       )}
 
       <div ref={scrollRef} className="flex-1 overflow-y-auto px-4 py-4 space-y-4">
-        {/* Tool Call Trace - opt-in developer detail from stage-progress events */}
+        {/* Judge-verifiable Qwen tool evidence from persisted stage-progress events. */}
         {showDeveloperDetails && (
           <ToolCallTrace events={events} currentStage={currentStage} />
         )}

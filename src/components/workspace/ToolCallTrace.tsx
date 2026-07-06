@@ -87,13 +87,16 @@ export default function ToolCallTrace({ events, currentStage }: ToolCallTracePro
   const isProposalStage = currentStage === "proposal";
 
   return (
-    <div className="border border-gray-700 rounded-lg bg-gray-800/30 overflow-hidden">
+    <section
+      aria-labelledby="qwen-evidence-title"
+      className="overflow-hidden rounded-lg border border-violet-500/30 bg-gradient-to-b from-violet-500/[0.08] to-gray-900/40"
+    >
       {/* Header - collapsible */}
       <div
         role="button"
         tabIndex={0}
         aria-expanded={expanded}
-        aria-label={`Tool call trace. ${expanded ? "Click to collapse" : "Click to expand"}.`}
+        aria-label={`Qwen execution evidence. ${expanded ? "Click to collapse" : "Click to expand"}.`}
         className="flex items-center justify-between px-3 py-2 cursor-pointer hover:bg-gray-800/50 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/70 focus-visible:ring-offset-1 focus-visible:ring-offset-gray-950"
         onClick={() => setExpanded(!expanded)}
         onKeyDown={(e) => {
@@ -104,7 +107,12 @@ export default function ToolCallTrace({ events, currentStage }: ToolCallTracePro
         }}
       >
         <div className="flex items-center gap-2">
-          <span className="text-xs font-medium text-gray-300">Tool Call Trace</span>
+          <span id="qwen-evidence-title" className="text-xs font-semibold text-violet-200">
+            Qwen execution evidence
+          </span>
+          <span className="rounded-full border border-emerald-500/30 bg-emerald-500/10 px-1.5 py-0.5 text-[10px] font-medium text-emerald-300">
+            schema validated
+          </span>
           <span className="text-xs text-gray-500 font-mono">
             {traceData.length} event{traceData.length !== 1 ? "s" : ""}
           </span>
@@ -127,6 +135,9 @@ export default function ToolCallTrace({ events, currentStage }: ToolCallTracePro
 
       {expanded && (
         <div className="border-t border-gray-700 px-3 py-2 space-y-2">
+          <p className="text-xs leading-relaxed text-gray-400">
+            Persisted evidence of read-only repository tools used before each structured stage output.
+          </p>
           {/* Live activity during proposal stage */}
           {isProposalStage && activeTraces.length > 0 && (
             <div className="space-y-1">
@@ -154,6 +165,7 @@ export default function ToolCallTrace({ events, currentStage }: ToolCallTracePro
               <thead>
                 <tr className="text-gray-500">
                   <th className="text-left py-1 font-medium">Agent</th>
+                  <th className="text-left py-1 font-medium">Stage</th>
                   <th className="text-left py-1 font-medium">Files Read</th>
                   <th className="text-right py-1 font-medium">Calls</th>
                   <th className="text-right py-1 font-medium">Cap</th>
@@ -170,6 +182,7 @@ export default function ToolCallTrace({ events, currentStage }: ToolCallTracePro
                         </span>
                       </div>
                     </td>
+                    <td className="py-1.5 text-gray-400 capitalize">{trace.stage || "proposal"}</td>
                     <td className="py-1.5 text-gray-400">
                       {trace.filesRead.length > 0 ? (
                         <span title={trace.filesRead.join(", ")}>
@@ -203,6 +216,6 @@ export default function ToolCallTrace({ events, currentStage }: ToolCallTracePro
           )}
         </div>
       )}
-    </div>
+    </section>
   );
 }

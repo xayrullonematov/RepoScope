@@ -1,0 +1,216 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>RepoScope — Agent Society</title>
+  <style>
+    :root {
+      --bg: #07090d;
+      --surface: #0d1117;
+      --raised: #111827;
+      --border: #253047;
+      --text: #f5f7fb;
+      --muted: #9ba7bb;
+      --violet: #8b5cf6;
+      --violet-soft: #c4b5fd;
+      --blue: #60a5fa;
+      --red: #f87171;
+      --amber: #fbbf24;
+      --green: #34d399;
+    }
+    * { box-sizing: border-box; }
+    html, body { width: 100%; height: 100%; margin: 0; }
+    body {
+      overflow: hidden;
+      background: #03050a;
+      color: var(--text);
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+    button { font: inherit; }
+    .deck {
+      position: absolute;
+      inset: 0;
+      width: min(100vw, calc(100vh * 16 / 9));
+      height: min(100vh, calc(100vw * 9 / 16));
+      margin: auto;
+      overflow: hidden;
+      background: var(--bg);
+      box-shadow: 0 30px 100px #000;
+    }
+    .slide {
+      position: absolute;
+      inset: 0;
+      display: grid;
+      align-content: center;
+      gap: clamp(18px, 3vh, 34px);
+      padding: clamp(34px, 6vw, 88px);
+      opacity: 0;
+      visibility: hidden;
+      transform: translateY(10px);
+      transition: opacity .28s ease, transform .28s ease;
+      background:
+        radial-gradient(circle at 80% 10%, rgba(139,92,246,.16), transparent 35%),
+        linear-gradient(145deg, #07090d, #0a0d15 70%);
+    }
+    .slide.active { opacity: 1; visibility: visible; transform: none; }
+    .eyebrow { color: var(--violet-soft); font-size: clamp(11px, 1.2vw, 17px); font-weight: 750; letter-spacing: .16em; text-transform: uppercase; }
+    h1, h2, h3, p { margin: 0; }
+    h1 { max-width: 1050px; font-size: clamp(42px, 7.6vw, 104px); line-height: .97; letter-spacing: -.055em; }
+    h2 { max-width: 1100px; font-size: clamp(32px, 5vw, 70px); line-height: 1.02; letter-spacing: -.045em; }
+    h3 { font-size: clamp(17px, 2vw, 28px); }
+    p, li { font-size: clamp(15px, 1.6vw, 23px); line-height: 1.45; color: var(--muted); }
+    .gradient { background: linear-gradient(100deg, #fff 5%, var(--violet-soft) 52%, var(--blue)); background-clip: text; color: transparent; }
+    .lede { max-width: 880px; font-size: clamp(19px, 2.3vw, 31px); }
+    .tag { width: fit-content; padding: 8px 13px; border: 1px solid rgba(139,92,246,.35); border-radius: 999px; background: rgba(139,92,246,.1); color: var(--violet-soft); font-weight: 700; }
+    .grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; }
+    .card { min-height: 150px; padding: clamp(16px, 2vw, 28px); border: 1px solid var(--border); border-radius: 18px; background: rgba(17,24,39,.78); }
+    .card p { margin-top: 10px; font-size: clamp(13px, 1.25vw, 18px); }
+    .dot { display: inline-block; width: 10px; height: 10px; margin-right: 8px; border-radius: 50%; }
+    .flow { display: grid; grid-template-columns: repeat(4, 1fr); gap: 28px; counter-reset: stage; }
+    .flow .card { position: relative; min-height: 125px; }
+    .flow .card:not(:last-child)::after { content: "→"; position: absolute; right: -22px; top: 45%; color: var(--violet-soft); font-size: 24px; }
+    .split { display: grid; grid-template-columns: 1.08fr .92fr; gap: clamp(25px, 5vw, 70px); align-items: center; }
+    .proof { display: grid; gap: 12px; }
+    .proof-row { display: grid; grid-template-columns: 150px 1fr; gap: 18px; padding: 15px 0; border-bottom: 1px solid var(--border); }
+    .proof-row strong { color: var(--text); font-size: clamp(15px, 1.5vw, 21px); }
+    .proof-row span { color: var(--muted); font-size: clamp(14px, 1.35vw, 19px); }
+    .warning { border-color: rgba(251,191,36,.35); background: rgba(251,191,36,.07); }
+    .warning h3 { color: var(--amber); }
+    .quote { max-width: 1000px; font-size: clamp(30px, 5vw, 68px); line-height: 1.08; letter-spacing: -.035em; }
+    .footer { position: absolute; left: clamp(24px, 4vw, 60px); right: clamp(24px, 4vw, 60px); bottom: 22px; display: flex; justify-content: space-between; color: #69758a; font-size: 13px; }
+    .progress { position: fixed; z-index: 5; top: 0; left: 0; height: 3px; background: linear-gradient(90deg, var(--violet), var(--blue)); transition: width .25s; }
+    .nav { position: fixed; z-index: 6; right: 22px; bottom: 18px; display: flex; gap: 8px; }
+    .nav button { width: 42px; height: 42px; border: 1px solid var(--border); border-radius: 50%; background: rgba(13,17,23,.9); color: var(--text); cursor: pointer; }
+    .nav button:hover, .nav button:focus-visible { border-color: var(--violet); outline: 2px solid transparent; background: var(--raised); }
+    .stage-label { color: var(--violet-soft); font-weight: 800; }
+    @media (max-width: 760px) {
+      .grid { grid-template-columns: repeat(2, 1fr); }
+      .split { grid-template-columns: 1fr; }
+      .flow { grid-template-columns: repeat(2, 1fr); }
+      .flow .card::after { display: none; }
+      .proof-row { grid-template-columns: 110px 1fr; }
+      .nav { display: none; }
+    }
+  </style>
+</head>
+<body>
+  <div class="progress" id="progress"></div>
+  <main class="deck" aria-live="polite">
+    <section class="slide active">
+      <span class="eyebrow">Qwen Cloud Global AI Hackathon · Agent Society</span>
+      <h1 class="gradient">One AI opinion is not a code review.</h1>
+      <p class="lede">RepoScope turns repository review into an inspectable engineering debate.</p>
+      <span class="tag">Scope your repo before you ship.</span>
+      <div class="footer"><span>RepoScope</span><span>01</span></div>
+    </section>
+
+    <section class="slide">
+      <span class="eyebrow">The society</span>
+      <h2>Four objectives. Conflict by design.</h2>
+      <div class="grid">
+        <article class="card"><h3><i class="dot" style="background:var(--blue)"></i>Senior</h3><p>Correctness, maintainability, architecture.</p></article>
+        <article class="card"><h3><i class="dot" style="background:var(--red)"></i>Security</h3><p>Trust boundaries, auth, secrets, injection.</p></article>
+        <article class="card"><h3><i class="dot" style="background:var(--amber)"></i>Performance</h3><p>Latency, allocation, I/O, scale.</p></article>
+        <article class="card"><h3><i class="dot" style="background:var(--violet)"></i>Product</h3><p>User value, scope, and shipping risk.</p></article>
+      </div>
+      <p>Opposing critique: <strong>Senior ↔ Performance</strong> · <strong>Security ↔ Product</strong></p>
+      <div class="footer"><span>Specialized Qwen agents</span><span>02</span></div>
+    </section>
+
+    <section class="slide">
+      <span class="eyebrow">The protocol</span>
+      <h2>Disagreement becomes traceable work.</h2>
+      <div class="flow">
+        <article class="card"><h3 class="stage-label">Proposal</h3><p>Inspect the repo and take a position.</p></article>
+        <article class="card"><h3 class="stage-label">Critique</h3><p>Apply the strongest opposing objective.</p></article>
+        <article class="card"><h3 class="stage-label">Revision</h3><p>Concede, reject, or strengthen.</p></article>
+        <article class="card"><h3 class="stage-label">Consensus</h3><p>Preserve agreements, disputes, and evidence.</p></article>
+      </div>
+      <div class="footer"><span>Exact event lineage</span><span>03</span></div>
+    </section>
+
+    <section class="slide">
+      <span class="eyebrow">Qwen execution contract</span>
+      <h2>Tools first. Typed evidence last.</h2>
+      <div class="split">
+        <div class="proof">
+          <div class="proof-row"><strong>Inspect</strong><span>Bounded, read-only repository tools</span></div>
+          <div class="proof-row"><strong>Respond</strong><span>Stage-specific structured JSON</span></div>
+          <div class="proof-row"><strong>Validate</strong><span>Zod schema + repair retry</span></div>
+          <div class="proof-row"><strong>Persist</strong><span>Tool and debate events in one log</span></div>
+        </div>
+        <article class="card">
+          <span class="tag">Live demo</span>
+          <h3 style="margin-top:18px">Agent Debate → Qwen evidence</h3>
+          <p>See each stage, file read, tool-call count, and cap status.</p>
+        </article>
+      </div>
+      <div class="footer"><span>Auditable model behavior</span><span>04</span></div>
+    </section>
+
+    <section class="slide">
+      <span class="eyebrow">Engineered for execution</span>
+      <h2>The society survives the request.</h2>
+      <div class="grid">
+        <article class="card"><h3>Durable jobs</h3><p>Queue state survives HTTP lifecycle boundaries.</p></article>
+        <article class="card"><h3>Leases</h3><p>Heartbeat and expiry identify interrupted work.</p></article>
+        <article class="card"><h3>Recovery</h3><p>Expired reviews retry without false completion.</p></article>
+        <article class="card"><h3>Event sourcing</h3><p>Append-only history reconstructs the session.</p></article>
+      </div>
+      <div class="footer"><span>Observable · recoverable · bounded</span><span>05</span></div>
+    </section>
+
+    <section class="slide">
+      <span class="eyebrow">Evaluation discipline</span>
+      <h2>No victory lap without evidence.</h2>
+      <div class="split">
+        <article class="card">
+          <h3>Reproducible harness</h3>
+          <p>Same pinned repo, Qwen family, prompt, tools, limits, deterministic matcher, and retained raw outputs.</p>
+        </article>
+        <article class="card warning">
+          <h3>Current result: inconclusive</h3>
+          <p>Two trials score both arms at zero evidence support. Debate costs more. Next: calibrate the evaluator and broaden the dataset.</p>
+        </article>
+      </div>
+      <div class="footer"><span>Falsifiable, not promotional</span><span>06</span></div>
+    </section>
+
+    <section class="slide">
+      <span class="eyebrow">Running on Alibaba Cloud ECS</span>
+      <p class="quote gradient">Let agents disagree. Require evidence. Give the developer the final say.</p>
+      <div class="proof" style="max-width:850px">
+        <div class="proof-row"><strong>Live</strong><span>reposcope.myrepo.xyz</span></div>
+        <div class="proof-row"><strong>Proof</strong><span>/api/deployment-proof · ECS metadata · independent ASN</span></div>
+      </div>
+      <span class="tag">Scope your repo before you ship.</span>
+      <div class="footer"><span>RepoScope</span><span>07</span></div>
+    </section>
+  </main>
+
+  <nav class="nav" aria-label="Slide navigation">
+    <button type="button" id="prev" aria-label="Previous slide">←</button>
+    <button type="button" id="next" aria-label="Next slide">→</button>
+  </nav>
+  <script>
+    const slides = [...document.querySelectorAll('.slide')];
+    let current = 0;
+    function show(index) {
+      current = Math.max(0, Math.min(slides.length - 1, index));
+      slides.forEach((slide, i) => slide.classList.toggle('active', i === current));
+      document.getElementById('progress').style.width = `${((current + 1) / slides.length) * 100}%`;
+      document.title = `RepoScope — ${current + 1}/${slides.length}`;
+    }
+    document.getElementById('prev').addEventListener('click', () => show(current - 1));
+    document.getElementById('next').addEventListener('click', () => show(current + 1));
+    document.addEventListener('keydown', (event) => {
+      if (event.key === 'ArrowLeft') show(current - 1);
+      if (event.key === 'ArrowRight' || event.key === ' ') { event.preventDefault(); show(current + 1); }
+      if (event.key === 'Home') show(0);
+      if (event.key === 'End') show(slides.length - 1);
+    });
+    show(0);
+  </script>
+</body>
+</html>

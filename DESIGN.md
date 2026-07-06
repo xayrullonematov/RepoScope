@@ -87,6 +87,12 @@ disagree with it.
   schema (`proposal`, `critique`, `revision`, `consensus`). Clarification is a
   first-class field — no prose is ever parsed with heuristics. Schema failures
   retry up to 2×.
+- **Qwen tool loop before output.** During proposal, each Qwen agent receives a
+  bounded set of read-only repository tools (`list_files`, `read_file`,
+  `search_code`). Tool results are returned as inert `<repo-data>` context; the
+  agent continues until it emits the stage's final structured JSON. Calls and
+  files read are persisted as `stage-progress` evidence, including whether the
+  hard call cap was reached.
 - **Summaries, not full history.** Agents never see the raw event log; context is
   assembled from workspace/round/artifact summaries under a per-call token budget.
 - **Crash recovery.** Because state is event-sourced, a crash mid-round replays
@@ -97,6 +103,25 @@ disagree with it.
 
 The system is designed against **23 explicit correctness properties**, verified
 with property-based tests (`fast-check`) rather than example cases alone.
+
+### Qwen execution contract
+
+```text
+Qwen stage prompt
+  → optional read-only tool calls (bounded by call + byte caps)
+  → repository data returned as inert context
+  → final JSON response
+  → Zod validation
+  → repair retry on schema failure
+  → typed event persisted
+  → UI projection + Qwen execution evidence
+```
+
+The demo exposes this contract in **Agent Debate → Qwen evidence**. The panel is
+derived from persisted events rather than client-side counters, so judges can
+inspect each agent's stage, files read, tool-call count, and cap status. The
+debate messages beside it are projections of the validated proposal, critique,
+revision, and consensus payloads.
 
 ---
 
@@ -180,6 +205,8 @@ Report tabs: **Report · Findings · Files · Agent Debate · Export.**
 - **Zod** structured-output validation
 - **OpenAI-compatible LLM layer** (Qwen via DashScope) with retry/backoff and
   model tiering
+- **Bounded Qwen tool loop** with read-only repository tools and persisted
+  execution evidence
 - **Vitest** + **fast-check** property-based tests
 - Deployed on **Alibaba Cloud ECS** (Docker Compose behind host Nginx + Let's
   Encrypt TLS) — [`deployment/alibaba-cloud.md`](deployment/alibaba-cloud.md)

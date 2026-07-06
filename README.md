@@ -30,6 +30,9 @@ Point it at a GitHub repository and a swarm of four specialized LLM agents — e
 
 > Submitted to the **Qwen Cloud Global AI Hackathon** — **Track 3: Agent Society** (Multi-Agent Swarm Collaboration).
 
+Presentation materials: [five-minute demo script](submission/five-minute-demo.md)
+· [submission copy](submission/submission-copy.md) · [HTML slide deck](submission/slides.html)
+
 RepoScope models a **real engineering design room** rather than a single assistant. Four LLM agents — `senior-engineer`, `security-engineer`, `performance-engineer`, and `product-engineer` — each carry a distinct **objective function**, partition the work, and negotiate through structured **proposal → critique → revision → consensus** rounds to produce engineering artifacts: decisions, risks, trade-offs, and recommendations.
 
 The LLM layer talks to **Qwen** through the OpenAI-compatible **DashScope** endpoint (see [`.env.example`](.env.example)). Licensed under the [MIT License](LICENSE).
@@ -43,6 +46,7 @@ The LLM layer talks to **Qwen** through the OpenAI-compatible **DashScope** endp
 | 🧠 **Adversarial by design** | Critique routing is fixed by *maximum objective conflict* — Senior ↔ Performance, Security ↔ Product. Agents can't rubber-stamp each other; disagreement is structural, not accidental. |
 | 🗂️ **Event-sourced** | All session state is derived by replaying an append-only event log. The projector is a **pure function** (`events → SessionState`), snapshot-accelerated, fully replayable. |
 | 📐 **Structured outputs only** | Every agent response is validated against a **Zod schema** — no prose-parsing heuristics. Clarification is a first-class field, not a guess. Auto-retries on schema failure. |
+| 🔎 **Auditable Qwen tool use** | Proposal agents inspect the repository through bounded, read-only tools. Calls, files read, and cap status are persisted and visible under **Agent Debate → Qwen evidence**. |
 | 🗜️ **Context-compressed** | Agents never see the full history. Workspace / round / artifact **summary services** keep every call inside a token budget. |
 | 💥 **Crash-safe** | A crash mid-round is recovered from `stage-progress` events — completed agent work is never lost, the stale lock is released, and only unfinished stages re-run. |
 | 💸 **Cost-governed** | Per-session **token budgets** and per-stage **model tiering** (cheap models for critique/summary, strong model for proposals) keep spend bounded. |
@@ -161,6 +165,7 @@ src/
 │   ├── state-projector.ts          ⭐ pure events → SessionState
 │   ├── round-orchestrator.ts       drives proposal→critique→revision→consensus
 │   ├── agent-executor.ts           prompt → tier select → LLM → validate → track
+│   ├── agent-tool-loop.ts          bounded Qwen ↔ read-only repo tool loop
 │   ├── llm-provider.ts             OpenAI-compatible client (retry, backoff, timeout)
 │   ├── crash-recovery.ts           replays stage-progress to resume mid-round
 │   ├── github-fetcher.ts           repo grounding for the proposal stage
@@ -174,6 +179,7 @@ src/
 
 - 🧷 **Event sourcing** — the only mutable state is `Artifact`; everything else replays from events. `projectSessionState` stays *pure*.
 - 🧾 **Structured outputs** — Zod-validated, retry-on-failure, clarification as a first-class field.
+- 🔎 **Auditable Qwen execution** — persisted tool calls and file reads are visible in the live debate UI; final stage payloads only enter the event log after schema validation.
 - 🗜️ **Summaries over history** — agents receive compressed context, never the raw log.
 - 🔒 **Session lock** — one round at a time; concurrent starts return `409`; stale locks (>5 min) auto-recover.
 
