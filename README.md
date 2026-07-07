@@ -76,7 +76,10 @@ The LLM layer talks to **Qwen** through the OpenAI-compatible **DashScope** endp
         📄 Artifacts  ·  ✅ Decisions  ·  ⚠️ Risks  ·  ❓ Open questions
 ```
 
-Each round runs those four stages in a single transaction, generates summaries, then lands in `awaiting-intervention` — where **you** can inject constraints before the next round auto-advances.
+Each round runs those four stages in order. Agent results are batch-written in
+stage-scoped transactions, summaries are generated after completion, and the
+round then lands in `awaiting-intervention` — where **you** can inject
+constraints before the next round advances.
 
 ---
 
@@ -106,9 +109,9 @@ Fill in the essentials:
 |---|---|
 | `LLM_API_KEY` | Your DashScope (or OpenAI-compatible) API key |
 | `LLM_API_ENDPOINT` | e.g. `https://dashscope-intl.aliyuncs.com/compatible-mode/v1` |
-| `LLM_MODEL` | Primary model — default `qwen3.5-plus` |
-| `LLM_MODEL_CRITIQUE_TIER` | Cheaper tier for critique — default `qwen3-coder-next` |
-| `LLM_MODEL_SUMMARY_TIER` | Cheapest tier for summaries — default `qwen-turbo` |
+| `LLM_MODEL` | Primary model — `.env.example` uses `qwen3.5-plus` |
+| `LLM_MODEL_CRITIQUE_TIER` | Cheaper tier for critique — `.env.example` uses `qwen3-coder-next` |
+| `LLM_MODEL_SUMMARY_TIER` | Cheapest tier for summaries — `.env.example` uses `qwen-turbo` |
 | `GITHUB_TOKEN` | *(optional)* raises the public GitHub rate limit |
 | `DEMO_PASSWORD` | *(optional)* gates the app behind a password |
 
@@ -143,13 +146,24 @@ npx vitest run src/lib/state-projector.test.ts
 npx vitest run -t "pure function round-trip"
 ```
 
-> ℹ️ Tests run against a **separate `test.db`** and truncate all tables before each test. Run `npx prisma db push` once against it before your first test run.
+> ℹ️ Tests run against a **separate `test.db`** and truncate all tables before
+> each test. Initialize that database before your first test run:
+>
+> ```bash
+> DATABASE_URL=file:./test.db npx prisma db push
+> ```
 
 ---
 
 ## 🧪 Testing philosophy
 
-Correctness properties from the design spec are enforced with **property-based tests** ([`fast-check`](https://github.com/dubzzz/fast-check)) — not just hand-picked examples. Invariants like *projection round-trip*, *snapshot ≡ full projection*, and the *four-agent invariant* are checked across thousands of generated event logs. When event handling, artifacts, or projection change, the property test changes with them.
+Correctness properties from the design spec are enforced with **property-based
+tests** ([`fast-check`](https://github.com/dubzzz/fast-check)) — not just
+hand-picked examples. Invariants like *projection round-trip*, *snapshot ≡ full
+projection*, and the *four-agent invariant* are checked across generated event
+logs. Run counts are deliberately lower for database-backed integration
+properties than for pure in-memory properties. When event handling, artifacts,
+or projection change, the property test changes with them.
 
 ---
 
@@ -183,7 +197,9 @@ src/
 - 🗜️ **Summaries over history** — agents receive compressed context, never the raw log.
 - 🔒 **Session lock** — one round at a time; concurrent starts return `409`; stale locks (>5 min) auto-recover.
 
-📚 The full spec lives in [`.kiro/specs/ai-engineering-room/`](.kiro/specs/ai-engineering-room/) — `design.md` is the source of truth for component contracts and the 23 correctness properties.
+📚 See [`DESIGN.md`](DESIGN.md) for the maintained product and architecture
+overview. The implementation's property-based tests document the enforced
+correctness invariants alongside the code.
 
 ---
 

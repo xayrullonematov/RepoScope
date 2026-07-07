@@ -1,8 +1,9 @@
 # Deployment proof screenshots
 
-Drop the image files here using **these exact filenames** — they are already
-referenced from [`../alibaba-cloud.md`](../alibaba-cloud.md) (Evidence section),
-so once the files exist the doc renders them automatically.
+These checked-in images are referenced from
+[`../alibaba-cloud.md`](../alibaba-cloud.md) and provide the public deployment
+evidence. Replace them using the same filenames whenever the ECS instance,
+region, public IP, or deployment changes.
 
 | Filename | What to capture | Redact before saving |
 | --- | --- | --- |
@@ -11,7 +12,7 @@ so once the files exist the doc renders them automatically.
 | `deployment-proof-endpoint.png` | A **browser** at `https://reposcope.myrepo.xyz/api/deployment-proof` showing the JSON (`"platform":"Alibaba Cloud ECS"`, `"region":"ap-southeast-1"`, `"onAlibabaEcs":true`). | — |
 | `ipinfo-asn.png` | `https://ipinfo.io/47.84.200.2` (browser) or the `curl` output showing **AS45102 Alibaba**, Singapore. | — |
 
-## How to get the files onto the server
+## Replacing the captures
 
 Screenshots are taken on your local machine; copy them into this folder on the
 ECS host, e.g.:
@@ -21,5 +22,6 @@ scp ./ecs-console-instance.png \
     hamma@47.84.200.2:/home/hamma/RepoScope/deployment/screenshots/
 ```
 
-Then tell me and I'll verify they render and commit them. (PNG or JPG both work;
-keep names exactly as above.)
+After replacing a capture, verify that it renders in `alibaba-cloud.md` and that
+all sensitive fields listed above are redacted. Keep the exact PNG filenames so
+the existing links remain valid.

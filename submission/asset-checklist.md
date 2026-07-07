@@ -39,6 +39,4 @@
 - [ ] Repository URL points to the intended public commit.
 - [ ] `README.md`, `DESIGN.md`, and deployment proof agree on model and hosting.
 - [ ] Slides work with Left/Right arrows and Space.
-- [ ] All product screenshots are captured after the item 3 UI change is
-  deployed.
-
+- [ ] All product screenshots match the currently deployed UI and public commit.
