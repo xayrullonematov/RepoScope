@@ -24,4 +24,3 @@ benchmarks/output/
 # Kept locally, not published: dev/agent guidance + internal spec
 CLAUDE.md
 AGENTS.md
-.kiro/

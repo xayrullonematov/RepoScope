@@ -1,0 +1,14 @@
+{
+  "task_id": "task-human-in-the-room-directives",
+  "task_description": "Implement Human-in-the-Room Directives for Kiro Birthday Challenge Day 2. Add a first-class Team Directive concept where a human can add structured engineering directives that become shared context for all AI agents. Extends existing event-sourced architecture with new event type, state projector handler, context assembly, and Team Room UI.",
+  "status": "completed",
+  "feature_order": ["FEAT-001", "FEAT-002", "FEAT-003", "FEAT-004"],
+  "blocked_reason": null,
+  "verification": {
+    "build": "skipped",
+    "tests": "skipped",
+    "test_quality": "pass",
+    "docker_build": "skipped",
+    "summary": "Build, tests, and docker_build skipped due to INTEGRATIONS_ONLY network mode (npm registry blocked by proxy - 403 Forbidden). Verified code correctness through: (1) all imports resolve to existing files, (2) types are consistent across domain.ts, state-projector.ts, context-assembler.ts, and prompt-builder.ts, (3) state projector switch/case handles new event type in both functions, (4) no dangerouslySetInnerHTML in directive display, (5) property-based tests follow existing fast-check patterns, (6) API route follows existing intervene/route.ts pattern. Test quality verified by reading tests - they exercise actual projection logic with generated events and would fail if handler was removed."
+  }
+}
