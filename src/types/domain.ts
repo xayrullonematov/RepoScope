@@ -16,7 +16,7 @@ export type AgentType =
   | "performance-engineer"
   | "product-engineer";
 
-/** All 13 event types persisted in the event log */
+/** All 14 event types persisted in the event log */
 export type EventType =
   | "session-created"
   | "round-started"
@@ -30,7 +30,8 @@ export type EventType =
   | "artifact-created"
   | "artifact-updated"
   | "artifact-status-changed"
-  | "stage-progress";
+  | "stage-progress"
+  | "human-directive";
 
 /** Round stages in sequential execution order */
 export type RoundStage =
@@ -169,6 +170,7 @@ export interface SessionState {
   currentRound: number;
   currentStage: RoundStage | null;
   constraints: Constraint[];
+  humanDirectives: HumanDirective[];
   agents: AgentState[];
   rounds: RoundState[];
   artifacts: ArtifactState[];
@@ -192,6 +194,15 @@ export interface Constraint {
   text: string;
   category: string;
   createdAt: string;
+}
+
+/** A human-issued directive that agents must follow */
+export interface HumanDirective {
+  id: string;
+  text: string;
+  createdAt: string;
+  source: "human";
+  active: boolean;
 }
 
 /** Current state of an individual agent */
@@ -295,6 +306,7 @@ export interface ModelTierConfig {
 export interface WorkspaceContext {
   problemDescription: string;
   constraints: Constraint[];
+  humanDirectives: HumanDirective[];
   workspaceSummary: string;
   artifactSummaries: ArtifactState[];
   roundSummaries: RoundSummary[];

@@ -8,6 +8,7 @@ import type {
   ContextAssembler,
   WorkspaceContext,
   Constraint,
+  HumanDirective,
   ArtifactState,
   RoundSummary,
   PersistedEvent,
@@ -95,6 +96,9 @@ export const contextAssembler: ContextAssembler = {
     // Priority 3: Active constraints
     const constraints: Constraint[] = state.constraints;
 
+    // Priority 3: Human directives (same priority as constraints)
+    const humanDirectives: HumanDirective[] = state.humanDirectives ?? [];
+
     // Priority 4: Workspace summary
     const workspaceSummary: string =
       await workspaceSummaryService.generateSummary(sessionId);
@@ -115,11 +119,12 @@ export const contextAssembler: ContextAssembler = {
       estimateTokensForData(unresolvedDisagreements) +
       estimateTokens(session.problemDescription);
 
-    // Truncation operates on copies — never mutate the arrays returned by the
+    // Truncation operates on copies -- never mutate the arrays returned by the
     // services. Lowest priority is removed first.
     const finalRoundSummaries = [...roundSummaries];
     let finalWorkspaceSummary = workspaceSummary;
     let finalConstraints = constraints;
+    let finalHumanDirectives = humanDirectives;
     let finalArtifactSummaries = artifactSummaries;
 
     // Recompute the total from the current working set after every step rather
@@ -132,6 +137,7 @@ export const contextAssembler: ContextAssembler = {
       fixedTokens +
       estimateTokensForData(finalArtifactSummaries) +
       estimateTokensForData(finalConstraints) +
+      estimateTokensForData(finalHumanDirectives) +
       estimateTokens(finalWorkspaceSummary) +
       estimateTokensForData(finalRoundSummaries);
 
@@ -147,9 +153,10 @@ export const contextAssembler: ContextAssembler = {
       finalWorkspaceSummary = "";
     }
 
-    // Priority 3: Remove constraints if still over budget.
+    // Priority 3: Remove constraints and human directives if still over budget.
     if (totalTokens() > budget) {
       finalConstraints = [];
+      finalHumanDirectives = [];
     }
 
     // Priority 2: Remove artifact summaries if still over budget.
@@ -162,6 +169,7 @@ export const contextAssembler: ContextAssembler = {
     return {
       problemDescription: session.problemDescription,
       constraints: finalConstraints,
+      humanDirectives: finalHumanDirectives,
       workspaceSummary: finalWorkspaceSummary,
       artifactSummaries: finalArtifactSummaries,
       roundSummaries: finalRoundSummaries,

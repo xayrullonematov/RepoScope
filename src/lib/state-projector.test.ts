@@ -217,3 +217,191 @@ describe("StateProjector Property-Based Tests", () => {
     });
   });
 });
+
+// =============================================================================
+// HUMAN DIRECTIVE PROPERTY-BASED TESTS
+// =============================================================================
+
+describe("StateProjector Human Directive Tests", () => {
+  // Helper to generate a human-directive event
+  function createDirectiveEvent(overrides: Partial<PersistedEvent> = {}): PersistedEvent {
+    const id = `dir-${Math.random().toString(36).slice(2, 9)}`;
+    return {
+      id: `event-${Math.random().toString(36).slice(2, 9)}`,
+      sessionId: "session-123",
+      type: "human-directive",
+      agentId: null,
+      round: 0,
+      stage: null,
+      content: JSON.stringify({
+        id,
+        text: `Directive ${id}`,
+        createdAt: new Date().toISOString(),
+        source: "human",
+        active: true,
+      }),
+      timestamp: new Date().toISOString(),
+      ...overrides,
+    };
+  }
+
+  // Helper to generate a non-directive event
+  function createNonDirectiveEvent(): PersistedEvent {
+    return {
+      id: `event-${Math.random().toString(36).slice(2, 9)}`,
+      sessionId: "session-123",
+      type: "stage-progress",
+      agentId: "senior-engineer",
+      round: 1,
+      stage: "proposal",
+      content: JSON.stringify({ agentId: "senior-engineer" }),
+      timestamp: new Date().toISOString(),
+    };
+  }
+
+  // ===========================================================================
+  // 1. REPLAY RECONSTRUCTS DIRECTIVES CORRECTLY
+  // ===========================================================================
+  it("should reconstruct directives correctly from human-directive events", () => {
+    const directiveTextArb = fc.string({ minLength: 1, maxLength: 200 });
+    const directiveListArb = fc.array(directiveTextArb, { minLength: 1, maxLength: 20 });
+
+    fc.assert(
+      fc.property(directiveListArb, (texts) => {
+        const events: PersistedEvent[] = texts.map((text, i) =>
+          createDirectiveEvent({
+            content: JSON.stringify({
+              id: `dir-${i}`,
+              text,
+              createdAt: new Date(Date.now() + i * 1000).toISOString(),
+              source: "human",
+              active: true,
+            }),
+          })
+        );
+
+        const state = projectSessionState(events);
+
+        expect(state.humanDirectives).toHaveLength(texts.length);
+        for (let i = 0; i < texts.length; i++) {
+          expect(state.humanDirectives[i].text).toBe(texts[i]);
+          expect(state.humanDirectives[i].source).toBe("human");
+          expect(state.humanDirectives[i].active).toBe(true);
+        }
+      })
+    );
+  });
+
+  // ===========================================================================
+  // 2. DIRECTIVE ORDERING IS DETERMINISTIC
+  // ===========================================================================
+  it("should produce deterministic directive ordering on repeated projection", () => {
+    const directiveTextArb = fc.string({ minLength: 1, maxLength: 100 });
+    const directiveListArb = fc.array(directiveTextArb, { minLength: 1, maxLength: 15 });
+
+    fc.assert(
+      fc.property(directiveListArb, (texts) => {
+        const events: PersistedEvent[] = texts.map((text, i) =>
+          createDirectiveEvent({
+            id: `event-fixed-${i}`,
+            content: JSON.stringify({
+              id: `dir-${i}`,
+              text,
+              createdAt: new Date(1700000000000 + i * 1000).toISOString(),
+              source: "human",
+              active: true,
+            }),
+            timestamp: new Date(1700000000000 + i * 1000).toISOString(),
+          })
+        );
+
+        const state1 = projectSessionState(events);
+        const state2 = projectSessionState(events);
+
+        expect(state1.humanDirectives).toEqual(state2.humanDirectives);
+      })
+    );
+  });
+
+  // ===========================================================================
+  // 3. SNAPSHOTS AND FULL REPLAY REMAIN EQUIVALENT FOR DIRECTIVES
+  // ===========================================================================
+  it("should produce equivalent directive state via snapshots + incremental vs full replay", () => {
+    const directiveTextArb = fc.string({ minLength: 1, maxLength: 100 });
+    const directiveListArb = fc.array(directiveTextArb, { minLength: 2, maxLength: 20 });
+
+    fc.assert(
+      fc.property(
+        directiveListArb,
+        fc.integer({ min: 1, max: 19 }),
+        (texts, splitIndex) => {
+          const events: PersistedEvent[] = texts.map((text, i) =>
+            createDirectiveEvent({
+              content: JSON.stringify({
+                id: `dir-${i}`,
+                text,
+                createdAt: new Date(1700000000000 + i * 1000).toISOString(),
+                source: "human",
+                active: true,
+              }),
+            })
+          );
+
+          const actualSplit = Math.min(splitIndex, events.length - 1);
+
+          // Full replay
+          const fullState = projectSessionState(events);
+
+          // Snapshot + incremental
+          const snapshotEvents = events.slice(0, actualSplit);
+          const remainingEvents = events.slice(actualSplit);
+          const snapshotState = projectSessionState(snapshotEvents);
+          const incrementalState = applyEvents(snapshotState, remainingEvents);
+
+          expect(incrementalState.humanDirectives).toEqual(fullState.humanDirectives);
+        }
+      )
+    );
+  });
+
+  // ===========================================================================
+  // 4. UNRELATED EVENTS DO NOT MUTATE DIRECTIVE STATE
+  // ===========================================================================
+  it("should not mutate humanDirectives when non-directive events are injected", () => {
+    const directiveTextArb = fc.string({ minLength: 1, maxLength: 100 });
+    const directiveListArb = fc.array(directiveTextArb, { minLength: 1, maxLength: 10 });
+    const nonDirectiveCountArb = fc.integer({ min: 1, max: 20 });
+
+    fc.assert(
+      fc.property(directiveListArb, nonDirectiveCountArb, (texts, nonDirCount) => {
+        // Create directive events
+        const directiveEvents: PersistedEvent[] = texts.map((text, i) =>
+          createDirectiveEvent({
+            content: JSON.stringify({
+              id: `dir-${i}`,
+              text,
+              createdAt: new Date(1700000000000 + i * 1000).toISOString(),
+              source: "human",
+              active: true,
+            }),
+          })
+        );
+
+        // Create non-directive events
+        const nonDirectiveEvents: PersistedEvent[] = Array.from(
+          { length: nonDirCount },
+          () => createNonDirectiveEvent()
+        );
+
+        // Project with only directive events
+        const directiveOnlyState = projectSessionState(directiveEvents);
+
+        // Project with directive events + non-directive events interleaved
+        const mixedEvents = [...directiveEvents, ...nonDirectiveEvents];
+        const mixedState = projectSessionState(mixedEvents);
+
+        expect(mixedState.humanDirectives).toEqual(directiveOnlyState.humanDirectives);
+      })
+    );
+  });
+});

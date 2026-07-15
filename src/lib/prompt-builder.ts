@@ -9,6 +9,7 @@
 import type {
   AgentConfig,
   CritiqueOutput,
+  HumanDirective,
   LLMRequest,
   PersistedEvent,
   ProposalOutput,
@@ -275,6 +276,9 @@ function buildStableSystemBlock(
     ``,
     `## Active Constraints (constant for this session)`,
     formatConstraints(context.constraints),
+    ``,
+    `## Human Team Directives (from human engineer)`,
+    formatHumanDirectives(context.humanDirectives ?? []),
   ].join("\n");
 }
 
@@ -286,6 +290,15 @@ function formatConstraints(constraints: WorkspaceContext["constraints"]): string
   if (constraints.length === 0) return "None";
   return constraints
     .map((c) => `- [${c.category}] ${c.text}`)
+    .join("\n");
+}
+
+function formatHumanDirectives(directives: HumanDirective[]): string {
+  if (!directives || directives.length === 0) return "None";
+  const active = directives.filter((d) => d.active);
+  if (active.length === 0) return "None";
+  return active
+    .map((d) => `- [directive] ${d.text}`)
     .join("\n");
 }
 

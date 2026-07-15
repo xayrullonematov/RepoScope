@@ -7,6 +7,7 @@ import type {
   Constraint,
   ConsensusOutput,
   CritiqueOutput,
+  HumanDirective,
   PersistedEvent,
   ProposalOutput,
   RevisionOutput,
@@ -98,6 +99,7 @@ function createEmptySessionState(): SessionState {
     currentRound: 0,
     currentStage: null,
     constraints: [],
+    humanDirectives: [],
     agents: createInitialAgents(),
     rounds: [],
     artifacts: [],
@@ -432,6 +434,25 @@ function handleStageProgress(
   };
 }
 
+function handleHumanDirective(
+  state: SessionState,
+  content: Record<string, unknown>,
+  event: PersistedEvent
+): SessionState {
+  const directive: HumanDirective = {
+    id: (content.id as string) || event.id,
+    text: (content.text as string) || "",
+    createdAt: (content.createdAt as string) || event.timestamp,
+    source: "human",
+    active: (content.active as boolean) ?? true,
+  };
+
+  return {
+    ...state,
+    humanDirectives: [...state.humanDirectives, directive],
+  };
+}
+
 
 
 // =============================================================================
@@ -483,6 +504,8 @@ export function projectSessionState(events: PersistedEvent[]): SessionState {
         return handleArtifactStatusChanged(state, content);
       case "stage-progress":
         return handleStageProgress(state, content, event);
+      case "human-directive":
+        return handleHumanDirective(state, content, event);
       default:
         return state;
     }
@@ -550,6 +573,8 @@ export function applyEvents(
         return handleArtifactStatusChanged(state, content);
       case "stage-progress":
         return handleStageProgress(state, content, event);
+      case "human-directive":
+        return handleHumanDirective(state, content, event);
       default:
         return state;
     }

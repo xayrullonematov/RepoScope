@@ -1,0 +1,39 @@
+{
+  "id": "FEAT-002",
+  "type": "feat",
+  "description": "Implement the Human-in-the-Room Directives domain layer: new event type, types, state projector handler, Zod schema, context assembler integration, prompt builder formatting, API route, and property-based tests",
+  "status": "in_progress",
+  "steps": [
+    "Add 'human-directive' to the EventType union in src/types/domain.ts (making it 14 event types total)",
+    "Add HumanDirective interface to src/types/domain.ts with fields: id (string), text (string), createdAt (string), source ('human'), active (boolean)",
+    "Add humanDirectives: HumanDirective[] to the SessionState interface in src/types/domain.ts",
+    "Add humanDirectives field to WorkspaceContext interface in src/types/domain.ts",
+    "Add handleHumanDirective handler function in src/lib/state-projector.ts that appends a HumanDirective to state.humanDirectives from event content",
+    "Add case 'human-directive' to the switch statements in projectSessionState and applyEvents in src/lib/state-projector.ts",
+    "Initialize humanDirectives: [] in createEmptySessionState() in src/lib/state-projector.ts",
+    "Create src/schemas/human-directive.ts with a Zod schema for validating directive input (text: 1-500 chars, non-empty after trim)",
+    "Update src/lib/context-assembler.ts to include humanDirectives from projected state in the assembled WorkspaceContext (at same priority level as constraints - Priority 3)",
+    "Update src/lib/prompt-builder.ts to add a formatHumanDirectives function and include human directives in the stable system block after constraints section, clearly delimited as '## Human Team Directives (from human engineer)'",
+    "Create src/app/api/sessions/[sessionId]/directives/route.ts with POST endpoint that validates input, creates a human-directive event via eventStore.appendEvent, and returns the created directive",
+    "Add property-based tests to src/lib/state-projector.test.ts proving: (1) replay reconstructs directives correctly, (2) directive ordering is deterministic, (3) snapshots and full replay remain equivalent for directives, (4) unrelated events do not mutate directive state",
+    "Add a focused unit test for the directive API input validation (empty text rejected, text over 500 chars rejected, valid text accepted)"
+  ],
+  "acceptance_criteria": [
+    "EventType union in domain.ts includes 'human-directive'",
+    "HumanDirective interface exists with id, text, createdAt, source, active fields",
+    "SessionState.humanDirectives is typed as HumanDirective[]",
+    "WorkspaceContext.humanDirectives is typed as HumanDirective[]",
+    "State projector handles 'human-directive' events and appends to humanDirectives array",
+    "State projector remains a pure function (no DB calls, no side effects)",
+    "Context assembler passes humanDirectives to the WorkspaceContext output",
+    "Prompt builder includes human directives in agent system prompts with clear delimitation",
+    "POST /api/sessions/[sessionId]/directives validates input and persists as event",
+    "API rejects empty strings and strings over 500 characters",
+    "Property-based tests verify deterministic replay, snapshot consistency, and isolation from unrelated events"
+  ],
+  "verification": [
+    "Since npm registry is blocked (INTEGRATIONS_ONLY), verify by reading all modified files and confirming: types compile logically, imports resolve to existing files, test patterns match existing test structure, switch/case has no gaps"
+  ],
+  "blocked_reason": null,
+  "findings": ""
+}
