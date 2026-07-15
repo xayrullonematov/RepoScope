@@ -39,6 +39,26 @@ The LLM layer talks to **Qwen** through the OpenAI-compatible **DashScope** endp
 
 ---
 
+## 🎂 Day 2: Kiro Birthday Challenge
+
+> **Feature:** Human-in-the-Room Directives -- built during the **Kiro Birthday Challenge Day 2** window.
+
+RepoScope's Day 2 feature makes the human a visible **fifth engineer** in the shared engineering room. Instead of passively observing four AI agents deliberate, you now issue **structured directives** that enter the shared agent context and shape every subsequent decision.
+
+**What was added:**
+
+- The human appears as a named team member ("You / Human Engineer") in the new **Team Room** UI
+- Structured directives (validated, 1-500 chars) are submitted through a dedicated panel
+- A new `human-directive` event type flows through the event-sourced pipeline: event store, state projector, context assembler, prompt builder
+- Every agent receives human directives in their system prompt, creating an **auditable context flow** from human input to agent output
+- Activity feed and directives list provide full visibility into team interactions
+
+The entire RepoScope platform was not built during Day 2. Human-in-the-Room Directives is the specific feature added for this challenge.
+
+📄 **Full details:** [`CHALLENGE-DAY2.md`](CHALLENGE-DAY2.md) -- architecture changes, demo scenario, 60-second demo script, and social post.
+
+---
+
 ## ✨ Why it's interesting
 
 |  | |
