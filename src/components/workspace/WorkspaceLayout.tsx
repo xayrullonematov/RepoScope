@@ -22,6 +22,10 @@ import ExportMenu, { type ExportMenuHandle } from "./ExportMenu";
 import { isRoundActive } from "./workspace-status";
 import ReviewOverview from "./ReviewOverview";
 import TechnicalActivityPanel from "./TechnicalActivityPanel";
+import TeamRoomPanel from "./TeamRoomPanel";
+import DirectivePanel from "./DirectivePanel";
+import DirectivesList from "./DirectivesList";
+import TeamActivityFeed from "./TeamActivityFeed";
 import { useEventStream } from "@/hooks/useEventStream";
 import { useKeyboardShortcuts } from "@/hooks/useKeyboardShortcuts";
 import { toast } from "@/hooks/useToast";
@@ -124,6 +128,7 @@ export default function WorkspaceLayout({ session, mutate }: WorkspaceLayoutProp
   const tabs = useMemo(() => [
     { id: "overview", label: "Overview" },
     { id: "findings", label: "Findings", badge: session.artifacts.length || undefined },
+    { id: "team", label: "Team Room" },
     { id: "technical", label: "Technical activity" },
   ], [session.artifacts.length]);
 
@@ -462,6 +467,34 @@ export default function WorkspaceLayout({ session, mutate }: WorkspaceLayoutProp
                   onEditBudget={() => setShowBudgetDialog(true)}
                   stageTransitions={stageTransitions}
                 />
+              )}
+
+              {activeTab === "team" && (
+                <div className="h-full overflow-y-auto px-3 py-3 sm:px-4 sm:py-4">
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                    {/* Left column: Team members + Directives list */}
+                    <div className="space-y-4">
+                      <TeamRoomPanel
+                        agents={session.agents}
+                        currentStage={session.currentStage}
+                      />
+                      <DirectivesList
+                        humanDirectives={session.humanDirectives}
+                      />
+                    </div>
+                    {/* Right column: Directive input + Activity feed */}
+                    <div className="space-y-4">
+                      <DirectivePanel
+                        sessionId={session.id}
+                        onDirectiveAdded={mutate}
+                      />
+                      <TeamActivityFeed
+                        events={events}
+                        humanDirectives={session.humanDirectives}
+                      />
+                    </div>
+                  </div>
+                </div>
               )}
             </div>
           </>

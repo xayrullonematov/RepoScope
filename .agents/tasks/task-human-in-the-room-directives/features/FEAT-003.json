@@ -1,0 +1,33 @@
+{
+  "id": "FEAT-003",
+  "type": "feat",
+  "description": "Implement the Team Room UI: TeamRoomPanel showing human + 4 AI engineers with status, DirectivePanel for adding directives, TeamActivityFeed for recent activity, and integration into WorkspaceLayout",
+  "status": "in_progress",
+  "steps": [
+    "Create src/components/workspace/TeamRoomPanel.tsx showing all 5 team members (You/Human Engineer + 4 AI agents) with their current status derived from session state. Human shows 'active' always. AI agents show truthful states: waiting, proposing, critiquing, revising, consensus, completed based on currentStage and hasCompletedCurrentStage",
+    "Create src/components/workspace/DirectivePanel.tsx with 'Add Team Directive' action - distinct from chatbot composer. Textarea with placeholder examples, 500-char limit shown, validation feedback, submit button. On submit: POST to /api/sessions/${sessionId}/directives, clear input, show success feedback",
+    "Create src/components/workspace/TeamActivityFeed.tsx that displays recent meaningful team activity derived from the event log (events from useEventStream). Show truthful descriptions: 'You added a team directive', 'Senior Engineer started proposal with N active directives', 'Security Engineer completed critique with N active directives', etc. Show timestamps.",
+    "Create src/components/workspace/DirectivesList.tsx that displays currently active human directives from session state, showing directive text, timestamp, and active status indicator",
+    "Integrate TeamRoomPanel into WorkspaceLayout.tsx as a new tab or sidebar panel. Add a 'team' tab to the workspace tabs. Include DirectivePanel, DirectivesList, and TeamActivityFeed within or alongside the TeamRoomPanel",
+    "Update src/components/workspace/WorkspaceTabs.tsx to include the new 'team' tab option",
+    "Ensure all UI treats directive text as untrusted user input (no dangerouslySetInnerHTML, text rendered as plain text only)"
+  ],
+  "acceptance_criteria": [
+    "TeamRoomPanel renders 5 team members with Human Engineer prominently shown",
+    "AI agent status in TeamRoomPanel is derived from session state (truthful, not fabricated)",
+    "DirectivePanel has clear 'Add Team Directive' action that is visually distinct from a chat input",
+    "DirectivePanel validates input (non-empty, max 500 chars) before submission",
+    "TeamActivityFeed shows real events with truthful descriptions including directive count where applicable",
+    "DirectivesList displays active directives with text, timestamp, and status",
+    "New 'team' tab is accessible from WorkspaceLayout",
+    "Directive text is treated as untrusted input (no innerHTML, no code interpretation)",
+    "UI uses existing project conventions: lucide-react icons, framer-motion animations, Tailwind CSS 4 classes, consistent dark theme colors"
+  ],
+  "verification": [
+    "Read all new component files to verify they follow existing patterns (use client directive, proper imports, Tailwind classes, framer-motion usage)",
+    "Verify WorkspaceLayout integration compiles logically with proper prop passing",
+    "Verify no dangerouslySetInnerHTML or eval usage in directive display"
+  ],
+  "blocked_reason": null,
+  "findings": ""
+}
