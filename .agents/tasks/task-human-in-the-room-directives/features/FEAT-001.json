@@ -1,0 +1,23 @@
+{
+  "id": "FEAT-001",
+  "type": "feat",
+  "description": "Create Kiro Spec and Steering files for Human-in-the-Room Directives feature under .kiro/ directory",
+  "status": "completed",
+  "steps": [
+    "Create .kiro/steering/product-principles.md with the principle: 'RepoScope is a shared engineering room, not a chatbot. Humans and AI engineers collaborate through shared structured project state. Human directives are team context and must influence subsequent agent work in an auditable way.'",
+    "Create .kiro/specs/human-in-the-room/requirements.md with explicit acceptance criteria covering: directive creation, event persistence, state projection, context propagation, team room UI, auditability, and privacy/security",
+    "Create .kiro/specs/human-in-the-room/design.md documenting the technical design: new 'human-directive' event type, HumanDirective interface, state projector extension, context assembler integration, prompt builder formatting, API route, and UI components",
+    "Create .kiro/specs/human-in-the-room/tasks.md with implementation tasks broken down into logical groups"
+  ],
+  "acceptance_criteria": [
+    ".kiro/steering/product-principles.md exists with the required principle",
+    ".kiro/specs/human-in-the-room/requirements.md exists with numbered acceptance criteria",
+    ".kiro/specs/human-in-the-room/design.md exists with technical architecture decisions",
+    ".kiro/specs/human-in-the-room/tasks.md exists with implementation task breakdown"
+  ],
+  "verification": [
+    "Verify all four files exist with non-empty, well-structured markdown content"
+  ],
+  "blocked_reason": null,
+  "findings": "Had to remove .kiro/ from .gitignore to allow spec files to be tracked in git. All four files created with well-structured markdown. Design references the existing 13 event types and documents adding a 14th (human-directive). Requirements cover all 8 acceptance criteria areas. Tasks are broken into 7 groups with dependency ordering."
+}
