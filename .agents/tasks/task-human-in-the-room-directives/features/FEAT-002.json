@@ -2,7 +2,7 @@
   "id": "FEAT-002",
   "type": "feat",
   "description": "Implement the Human-in-the-Room Directives domain layer: new event type, types, state projector handler, Zod schema, context assembler integration, prompt builder formatting, API route, and property-based tests",
-  "status": "in_progress",
+  "status": "completed",
   "steps": [
     "Add 'human-directive' to the EventType union in src/types/domain.ts (making it 14 event types total)",
     "Add HumanDirective interface to src/types/domain.ts with fields: id (string), text (string), createdAt (string), source ('human'), active (boolean)",
@@ -35,5 +35,5 @@
     "Since npm registry is blocked (INTEGRATIONS_ONLY), verify by reading all modified files and confirming: types compile logically, imports resolve to existing files, test patterns match existing test structure, switch/case has no gaps"
   ],
   "blocked_reason": null,
-  "findings": ""
+  "findings": "All implementations follow existing patterns. Added defensive null coalescing (?? []) for humanDirectives in context-assembler and prompt-builder to handle test mocks that use partial objects cast as 'any'. The Zod schema uses refine() for whitespace-only validation since Zod 4 min(1) only checks length, not content. Existing tests with 13-type event generators continue to work because the state projector default case handles unrecognized types gracefully."
 }
