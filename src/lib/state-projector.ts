@@ -439,12 +439,24 @@ function handleHumanDirective(
   content: Record<string, unknown>,
   event: PersistedEvent
 ): SessionState {
+  const isActive = (content.active as boolean) ?? true;
+
+  // When active is explicitly false, remove the directive from projected state
+  if (isActive === false) {
+    const targetId = (content.id as string) || event.id;
+    return {
+      ...state,
+      humanDirectives: state.humanDirectives.filter((d) => d.id !== targetId),
+    };
+  }
+
+  // Otherwise, add the directive to projected state
   const directive: HumanDirective = {
     id: (content.id as string) || event.id,
     text: (content.text as string) || "",
     createdAt: (content.createdAt as string) || event.timestamp,
     source: "human",
-    active: (content.active as boolean) ?? true,
+    active: true,
   };
 
   return {

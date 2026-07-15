@@ -41,17 +41,20 @@ function formatRelativeTime(timestamp: string): string {
 
 export default function TeamActivityFeed({
   events,
-  humanDirectives,
 }: TeamActivityFeedProps) {
-  const activeDirectiveCount = useMemo(
-    () => humanDirectives.filter((d) => d.active).length,
-    [humanDirectives],
-  );
-
   const activityItems: ActivityItem[] = useMemo(() => {
     const items: ActivityItem[] = [];
 
-    for (const event of events) {
+    for (let i = 0; i < events.length; i++) {
+      const event = events[i];
+
+      // Compute a running directive count: count "human-directive" events
+      // that appear BEFORE this event in the chronological events array
+      const directiveCountAtEvent = events
+        .slice(0, i)
+        .filter((e) => e.type === "human-directive")
+        .length;
+
       switch (event.type) {
         case "human-directive": {
           let preview = "";
@@ -74,8 +77,8 @@ export default function TeamActivityFeed({
             ? agentDisplayNames[event.agentId]
             : "An agent";
           const directiveSuffix =
-            activeDirectiveCount > 0
-              ? ` with ${activeDirectiveCount} active directive${activeDirectiveCount > 1 ? "s" : ""}`
+            directiveCountAtEvent > 0
+              ? ` with ${directiveCountAtEvent} active directive${directiveCountAtEvent > 1 ? "s" : ""}`
               : "";
           items.push({
             id: event.id,
@@ -90,7 +93,7 @@ export default function TeamActivityFeed({
             : "An agent";
           items.push({
             id: event.id,
-            description: `${agentName} completed critique with ${activeDirectiveCount} active directive${activeDirectiveCount !== 1 ? "s" : ""}`,
+            description: `${agentName} completed critique with ${directiveCountAtEvent} active directive${directiveCountAtEvent !== 1 ? "s" : ""}`,
             timestamp: event.timestamp,
           });
           break;
@@ -101,7 +104,7 @@ export default function TeamActivityFeed({
             : "An agent";
           items.push({
             id: event.id,
-            description: `${agentName} revised position with ${activeDirectiveCount} active directive${activeDirectiveCount !== 1 ? "s" : ""}`,
+            description: `${agentName} revised position with ${directiveCountAtEvent} active directive${directiveCountAtEvent !== 1 ? "s" : ""}`,
             timestamp: event.timestamp,
           });
           break;
@@ -129,7 +132,7 @@ export default function TeamActivityFeed({
 
     // Return most recent 15 items
     return items.slice(-15).reverse();
-  }, [events, activeDirectiveCount]);
+  }, [events]);
 
   return (
     <div className="rounded-lg border border-[var(--border)] bg-[var(--surface)] p-4">

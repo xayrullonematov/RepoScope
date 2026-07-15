@@ -9,6 +9,7 @@
 
 import { NextResponse } from "next/server";
 import cuid from "cuid";
+import { prisma } from "@/lib/db";
 import { eventStore } from "@/lib/event-store";
 import { humanDirectiveInputSchema } from "@/schemas/human-directive";
 import type { HumanDirective } from "@/types/domain";
@@ -28,6 +29,18 @@ export async function POST(
       return NextResponse.json(
         { error: "sessionId is required" },
         { status: 400 }
+      );
+    }
+
+    // Verify session exists before appending event
+    try {
+      await prisma.session.findUniqueOrThrow({
+        where: { id: sessionId },
+      });
+    } catch {
+      return NextResponse.json(
+        { error: "Session not found" },
+        { status: 404 }
       );
     }
 
